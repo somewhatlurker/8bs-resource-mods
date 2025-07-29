@@ -107,3 +107,17 @@ You can use `create_recommended_updates.py` to automate the process of generatin
 recommended updates.
 
 1. `python create_recommended_updates.py`
+
+
+## Developing New Updates
+You can use `crypto.py` as a command line application to decrypt files for exploration.
+In general, the .json files act like a relational database, but all data types and keys
+are implied rather than defined by a schema. (In reality, they seem to be exported
+from spreadsheet software.)
+
+Python has very good support for JSON - you can refer to `disable_iap.py` or
+`make_eternal_exchange_event.py` for some examples of processing existing JSON files.
+
+Images should be .png, preferrably the same resolution as original files. If possible,
+compress them to 8-bit indexed colour using pngquant (or a similar tool), to save space
+and better match most official assets.
