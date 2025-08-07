@@ -18,7 +18,13 @@ def privkey_bytes():
         return f.read()
 
 pubkey_cipher = RSA.importKey(pubkey_bytes())
-privkey_cipher = RSA.importKey(privkey_bytes())
+
+# wrap in try because privkey isn't needed for decryption
+try:
+    privkey_cipher = RSA.importKey(privkey_bytes())
+except Exception:
+    privkey_cipher = None
+    print('Unable to load server-private-key. Encryption will not be possible.')
 
 
 def gen_new_aes_key(json_bytes):
