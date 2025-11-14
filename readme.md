@@ -19,6 +19,13 @@ Resource modifications for 8 beat Story♪ to enhance QoL for playing on custom 
 Open a terminal to this directory (the one containing `readme.md` and the scripts), then
 refer to the information below for each script.
 
+### delete\_unneeded\_full\_res.py
+Usage: `python delete_unneeded_full_res.py <resource_path>`
+
+Deletes full resource files except for earliest and latest version (incremental
+update files are kept, for users who still need to update in-game).
+Saves space because these files will no longer be used for anything.
+
 ### disable\_iap.py
 Usage: `python disable_iap.py <resource_path> <ver>`
 
@@ -101,6 +108,13 @@ can obtain event cards and rewards.
 1. `python new_ver.py res 731 732`
 2. `python make_eternal_exchange_event.py res 732`
 3. `python gen_delta_update.py res 731 732`
+
+### Cleanup
+You can cleanup the large full version files for older updates that are no longer needed.
+The earliest and latest versions are kept so you can still generate future updates, and
+can always revert back to the original version.
+
+1. `python delete_unneeded_full_res.py res `
 
 ### Automatically Creating Recommended Updates
 You can use `create_recommended_updates.py` to automate the process of generating the

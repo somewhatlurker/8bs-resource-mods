@@ -130,6 +130,17 @@ def upd_732():
     gen_delta_update(RESOURCE_PATH, 731, 732)
 
 
+def cleanup():
+    """Cleans up after completion.
+
+    Cleanup involves deleting unneeded full update files.
+    (only incremental files are kept except for oldest and newest version)
+    """
+    from delete_unneeded_full_res import delete_unneeded_full_res
+
+    delete_unneeded_full_res(RESOURCE_PATH)
+
+
 if __name__ == '__main__':
     from os.path import exists as path_exists, join as path_join
     from util import ALL_ZIP_NAMES
@@ -162,3 +173,5 @@ if __name__ == '__main__':
         print(f'{ver}:')
         fn()
         print(f'Resource version {ver} completed\n')
+
+    cleanup()
