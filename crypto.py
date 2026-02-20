@@ -72,7 +72,7 @@ def decrypt_json(json_bytes, c_bytes):
 if __name__ == '__main__':
     from sys import argv
 
-    if len(argv) < 1:
+    if len(argv) < 2:
         print('Usage: python crypto.py <json_files>')
         exit()
 
