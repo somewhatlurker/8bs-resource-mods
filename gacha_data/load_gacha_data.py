@@ -1,6 +1,7 @@
 # helper module to load gacha data from csv, plus some useful stuff like relevant enums
 
 import csv
+from datetime import date
 from typing import List
 
 
@@ -58,6 +59,8 @@ def _load_gacha_data_csv(path: str) -> List[dict]:
       - Each one may contain any combination of the following keys:
         - ISO_WEEK
         - DURATION_DAYS
+        - EXPECT_START_DATE_EARLIEST
+        - EXPECT_START_DATE_LATEST
         - BANNER_TEXT_JA
         - BANNER_TEXT_EN
         - BANNER_BG
@@ -104,6 +107,8 @@ def _load_gacha_data_csv(path: str) -> List[dict]:
         col_heading_to_name = {  # maps heading (in sheet) to field name (in code)
             'ISO Week Number': 'ISO_WEEK',
             'Length (Days)': 'DURATION_DAYS',
+            'Start Date (Earliest)': 'EXPECT_START_DATE_EARLIEST',
+            'Start Date (Latest)': 'EXPECT_START_DATE_LATEST',
             'Banner Text (ja)': 'BANNER_TEXT_JA',
             'Banner Text (en)': 'BANNER_TEXT_EN',
             'Banner BG': 'BANNER_BG',
@@ -179,6 +184,8 @@ def load_and_parse_gacha_data_csv(path: str):
         - ISO_WEEK: int
         - DATE_OFFSET: int
         - DURATION_DAYS: int
+        - EXPECT_START_DATE_EARLIEST: str (MM/DD)
+        - EXPECT_START_DATE_LATEST: str (MM/DD)
         - BANNER_TEXT_JA: str
         - BANNER_TEXT_EN: str
         - BANNER_BG: str
@@ -202,3 +209,109 @@ def load_and_parse_gacha_data_csv(path: str):
         if not data[i].get('CARDS'):
             del data[i]
     return data
+
+
+def _verify_gacha_data_start_date_range(data: List[dict]):
+    """Verify the expected start date range (earliest and latest dates, MM/YY).
+
+    Done by checking that the EXPECT_START_DATE_EARLIEST/LATEST fields match with
+    the dates of the set ISO_WEEK in years 2004 and 2010 respectively.
+    (Adjusted to account for DATE_OFFSET)
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        if not 'ISO_WEEK' in row: continue
+        if not 'EXPECT_START_DATE_EARLIEST' in row:
+            raise ValueError('Missing expected start date (earliest), cannot verify.')
+        if not 'EXPECT_START_DATE_LATEST' in row:
+            raise ValueError('Missing expected start date (latest), cannot verify.')
+
+        iso_week = row['ISO_WEEK']
+        date_offset = row.get('DATE_OFFSET', 0)
+        expect_start_date_earliest = row['EXPECT_START_DATE_EARLIEST']
+        expect_start_date_latest = row['EXPECT_START_DATE_LATEST']
+
+        if date_offset < 0 or date_offset > 6:
+            raise ValueError(f'Invalid date offset {date_offset}. Expected 0-6.')
+
+        # 2004 was a leap year starting on Thursday, giving the earliest possible date
+        # for each ISO week.
+        date_earliest = date.fromisocalendar(2004, iso_week, date_offset + 1)
+        date_earliest_str = date_earliest.strftime('%m/%d')
+        if expect_start_date_earliest != date_earliest_str:
+            raise ValueError(
+                'Incorrect expected start date (earliest). '
+                f'{expect_start_date_earliest} != {date_earliest_str}'
+            )
+
+        # 2010 was a common year starting on Friday, giving the latest possible date
+        # for each ISO week.
+        date_latest = date.fromisocalendar(2010, iso_week, date_offset + 1)
+        date_latest_str = date_latest.strftime('%m/%d')
+        if expect_start_date_latest != date_latest_str:
+            raise ValueError(
+                'Incorrect expected start date (latest). '
+                f'{expect_start_date_latest} != {date_latest_str}'
+            )
+
+def _verify_gacha_data_date_duration(data: List[dict]):
+    """Verify the limited banner durations.
+
+    Banners must last at least one day and end in the same ISO week they start in.
+
+    Done by checking that the DURATION_DAYS field is greater than zero, and that
+    DATE_OFFSET plus DURATION_DAYS is less than or equal to 7.
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        if not 'DURATION_DAYS' in row: continue
+
+        duration = row['DURATION_DAYS']
+        date_offset = row.get('DATE_OFFSET', 0)
+
+        if not duration > 0:
+            raise ValueError(f'Invalid duration {duration}. Cannot be less than one day.')
+
+        if duration + date_offset > 7:
+            raise ValueError(f'Banner does not end in same ISO week as it started in.')
+
+def _verify_gacha_data_no_overlapping_date_ranges(data: List[dict]):
+    """Verify that no limited banners overlap each other in the data.
+
+    Done by searching for other banners with same ISO_WEEK and same or higher DATE_OFFSET.
+    DURATION_DAYS of this banner must not exceed difference between offsets of banners.
+
+    Raises ValueError if verification fails.
+    """
+    for i, row in enumerate(data):
+        if not 'ISO_WEEK' in row: continue
+        if not 'DURATION_DAYS' in row: continue
+
+        iso_week = row['ISO_WEEK']
+        duration = row['DURATION_DAYS']
+        date_offset = row.get('DATE_OFFSET', 0)
+
+        for other_row in data[i+1:]:
+            if not 'ISO_WEEK' in other_row: continue
+            if other_row['ISO_WEEK'] != iso_week: continue
+            other_date_offset = other_row.get('DATE_OFFSET', 0)
+            if other_date_offset < date_offset: continue
+
+            if duration > other_date_offset - date_offset:
+                raise ValueError(f'Overlapping banner date ranges in ISO week {iso_week}')
+
+def verify_gacha_data(data: List[dict]):
+    """Verify the gacha data is complete and accurate.
+
+    Checks perfomed:
+      - the expected start date range is correct (earliest and latest dates, MM/YY)
+      - limited banners must last at least one day
+      - limited banners end in the same ISO week they start in
+
+    Raises ValueError if verification fails.
+    """
+    _verify_gacha_data_start_date_range(data)
+    _verify_gacha_data_date_duration(data)
+    _verify_gacha_data_no_overlapping_date_ranges(data)

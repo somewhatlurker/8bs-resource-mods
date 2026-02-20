@@ -40,19 +40,20 @@ loading/parsing spreadsheets:
 checking completeness and accuracy of spreadsheets:
   1. create a list for cards "seen" in rotation+permanent sheets
   2. for each row of each sheet:
-    a. verify start date range:
+    a. verify start date range (for limited only):
       i.   earliest should match day of that ISO week in 2004 (leap year starting on thursday)
       ii.  latest should match day of that ISO week in 2010 (common year starting on friday)
-    b. verify length makes sense:
-      i.   date offset plus length should be in [5..7]
-      ii.  if another row shares the same integer week and has a higher offset, length must not exceed difference between offsets
+    b. verify duration makes sense (for limited only):
+      i.   duration > 0
+      ii.  date offset plus duration should be less than or equal to 7
+      iii. if another row shares the same integer week and has a higher offset, duration must not exceed difference between offsets
     c. for each card in the row:
       i.   check whether card ID is already in seen -- if yes, error (duplicate card)
       ii.  store card ID to seen cards
-      iii. if limited rotation sheet, verify that rarity is "SR" or "UR"
-      iii. verify that chara ID and rarity match with master_chara (for that card ID)
-      iv.  verify that series name (either from card name or master_series) is present in banner and rarity's description text
-      v.   verify that chara name is present in rarity's description text
+      iii. if limited rotation sheet, verify that rarity is SR or UR
+      iv.  verify that chara ID and rarity match with master_chara (for that card ID)
+      v.   verify that series name (either from card name or master_series) is present in banner and rarity's description text
+      vi.  verify that chara name is present in rarity's description text
   3. for each card in master_chara:
     a. if card is an event/promo or birthday card, or below SR rarity, skip it
     b. otherwise, verify that it is in the seen cards list -- if no, error (missing card in sheets)
