@@ -8,7 +8,10 @@
 
 # THIS IS A WORK IN PROGRESS! CURRENTLY ONLY LOADS/PARSES DATA!
 
-from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, verify_gacha_data
+import json
+
+from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
+    set_card_names_from_master_chara, verify_gacha_data
 from util import read_json_decrypted
 
 
@@ -17,16 +20,22 @@ PERMANENT_CSV_PATH = 'gacha_data/permanent.csv'
 
 
 def gen_gacha_rotation(resource_path, ver):
+    master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
+    master_chara = json.loads(master_chara)
+    master_series = read_json_decrypted(resource_path, ver, 'json/master_series.json')
+    master_series = json.loads(master_series)
+
     limited_gacha_data = load_and_parse_gacha_data_csv(LIMITED_CSV_PATH)
-    verify_gacha_data(limited_gacha_data)
-    print(limited_gacha_data)
-
     permanent_gacha_data = load_and_parse_gacha_data_csv(PERMANENT_CSV_PATH)
-    verify_gacha_data(permanent_gacha_data)
-    print(permanent_gacha_data)
 
-    master_chara = read_json_decrypted(resource_path, ver, 'master_chara.json')
-    master_series = read_json_decrypted(resource_path, ver, 'master_series.json')
+    set_card_names_from_master_chara(limited_gacha_data, master_chara)
+    set_card_names_from_master_chara(permanent_gacha_data, master_chara)
+
+    verify_gacha_data(limited_gacha_data, permanent_gacha_data,
+                      master_chara, master_series)
+
+    print(limited_gacha_data)
+    print(permanent_gacha_data)
 
 if __name__ == '__main__':
     from sys import argv

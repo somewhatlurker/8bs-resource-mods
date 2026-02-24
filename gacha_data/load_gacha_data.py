@@ -2,7 +2,8 @@
 
 import csv
 from datetime import date
-from typing import List
+import re
+from typing import Dict, List
 
 
 CHARA_NAME_EN_TO_ID = {
@@ -32,6 +33,8 @@ RARITY_NAME_TO_ID = {
 }
 RARITY_ID_TO_NAME = {id: name for name, id in RARITY_NAME_TO_ID.items()}
 
+CARD_NAME_REGEX = re.compile(r'^【(?P<series>.*)】(?P<chara>.*)')
+
 
 class CardDetail:
     def __init__(self, chara: int, id: int, rarity: int):
@@ -46,9 +49,19 @@ class CardDetail:
     def __repr__(self) -> str:
         return f'CardDetail({self.chara}, {self.id}, {self.rarity})'
 
-    def get_series() -> str:
+    def get_chara_name(self) -> str:
         if not self.name:
             return None
+
+        match = CARD_NAME_REGEX.match(self.name)
+        return match.group('chara')
+
+    def get_series_name(self) -> str:
+        if not self.name:
+            return None
+
+        match = CARD_NAME_REGEX.match(self.name)
+        return match.group('series')
 
 
 def _load_gacha_data_csv(path: str) -> List[dict]:
@@ -211,6 +224,23 @@ def load_and_parse_gacha_data_csv(path: str):
     return data
 
 
+def set_card_names_from_master_chara(
+        data: List[dict],
+        master_chara: List[dict]
+    ):
+    """Set card name fields from data in master_chara.
+
+    Only applies to cards that are in master_gacha; others are ignored.
+    """
+    master_chara_dict = {x['ID']: x for x in master_chara[1:]}
+    for row in data:
+        for card in row['CARDS']:
+            master_chara_card = master_chara_dict.get(card.id)
+            if not master_chara_card: continue
+
+            card.name = master_chara_card['NAME']
+
+
 def _verify_gacha_data_start_date_range(data: List[dict]):
     """Verify the expected start date range (earliest and latest dates, MM/YY).
 
@@ -302,16 +332,242 @@ def _verify_gacha_data_no_overlapping_date_ranges(data: List[dict]):
             if duration > other_date_offset - date_offset:
                 raise ValueError(f'Overlapping banner date ranges in ISO week {iso_week}')
 
-def verify_gacha_data(data: List[dict]):
-    """Verify the gacha data is complete and accurate.
+def _verify_gacha_data_rarity_sr_or_ur(data: List[dict]):
+    """Verify that all limited banners cards are SR or UR rarity.
+
+    Raises ValueError if verification fails.
+    """
+    allowed_rarities = (RARITY_NAME_TO_ID['SR'], RARITY_NAME_TO_ID['UR'])
+    for row in data:
+        for card in row['CARDS']:
+            if card.rarity not in allowed_rarities:
+                raise ValueError(f'Card {card.id} has disallowed rarity: {RARITY_ID_TO_NAME[card.rarity]}')
+
+def _verify_gacha_data_no_duplicate_cards(data: List[dict]):
+    """Verify that no card IDs appear twice in the data.
+
+    Done by maintaining a set of all card IDs seen so far and throwing an error if current
+    card is already in that set.
+
+    Raises ValueError if verification fails.
+    """
+    seen_cards = set()
+
+    for row in data:
+        for card in row['CARDS']:
+            if card.id in seen_cards:
+                raise ValueError(f'Duplicate card ID: {card.id}')
+            seen_cards.add(card.id)
+
+def _verify_gacha_data_chara_and_rarity_against_game(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict]
+    ):
+    """Verify that chara ID and rarity of cards in data matches master_chara.
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        for card in row['CARDS']:
+            master_chara_card = master_chara_dict.get(card.id)
+            if not master_chara_card:
+                raise ValueError(f'Card {card.id} not in master_chara')
+
+            if card.chara != master_chara_card['NO']:
+                raise ValueError(f'Wrong chara ID for card {card.id}')
+            if card.rarity != master_chara_card['RARE']:
+                raise ValueError(f'Wrong rarity for card {card.id}')
+
+def _verify_gacha_data_series_name_in_banner_text_ja(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict],
+        master_series_dict: Dict[int, dict]
+    ):
+    """Verify that the name of each card, or its series, is in the banner text.
+
+    Only considers the Japanese text.
+    Series name may come from the card master_series instead, to account for series
+    where each card has a different name (e.g. animal or star sign).
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        for card in row['CARDS']:
+            series_name_from_card = card.get_series_name()
+            if series_name_from_card:
+                if series_name_from_card in row['BANNER_TEXT_JA']: continue
+
+            master_chara_card = master_chara_dict.get(card.id)
+            if not master_chara_card:
+                raise ValueError(f'Card {card.id} not in master_chara')
+
+            series = master_series_dict[master_chara_card['SERIES']]
+            if series['NAME'] in row['BANNER_TEXT_JA']: continue
+
+            raise ValueError(f'Card {card.id} series missing in banner text')
+
+def _verify_gacha_data_series_name_in_desc_text_ja(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict],
+        master_series_dict: Dict[int, dict]
+    ):
+    """Verify that the name of each card, or its series, is in the description text.
+
+    Only considers the Japanese text.
+    Only considers the description matching card rarity.
+    Series name may come from the card master_series instead, to account for series
+    where each card has a different name (e.g. animal or star sign).
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        for card in row['CARDS']:
+            desc_field = f'{RARITY_ID_TO_NAME[card.rarity]}_DESC_TEXT_JA'
+
+            series_name_from_card = card.get_series_name()
+            if series_name_from_card:
+                if series_name_from_card in row[desc_field]: continue
+
+            master_chara_card = master_chara_dict.get(card.id)
+            if not master_chara_card:
+                raise ValueError(f'Card {card.id} not in master_chara')
+
+            series = master_series_dict[master_chara_card['SERIES']]
+            if series['NAME'] in row[desc_field]: continue
+
+            raise ValueError(f'Card {card.id} series missing in description text')
+
+def _verify_gacha_data_chara_name_in_desc_text_ja(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict]
+    ):
+    """Verify that the card's character name is in the description text.
+
+    Only considers the Japanese text.
+    Only considers the description matching card rarity.
+
+    Raises ValueError if verification fails.
+    """
+    for row in data:
+        for card in row['CARDS']:
+            desc_field = f'{RARITY_ID_TO_NAME[card.rarity]}_DESC_TEXT_JA'
+
+            # special case for 8/pLanet!! members: allow "8/pLanet!!全メンバー" as description
+            if card.chara < 9 and "8/pLanet!!全メンバー" in row[desc_field]: continue
+
+            chara_name_from_card = card.get_chara_name()
+            if chara_name_from_card:
+                if chara_name_from_card in row[desc_field]: continue
+
+            raise ValueError(f'Card {card.id} chara name missing in description text')
+
+def _verify_limited_gacha_data(
+        data: List[dict],
+        master_chara: List[dict] | None = None,
+        master_series: List[dict] | None = None
+    ):
+    """Verify all the limited-specific gacha data is complete and accurate.
+
+    _verify_common_gacha_data should be called for the combined list of limited
+    and permanent data after using _verify_limited_gacha_data.
+
+    master_chara and master_series are optional parameters that use data from game files
+    to perform additional checks.
+    set_card_names_from_master_gacha should also be called first if using game data for
+    additional checks.
 
     Checks perfomed:
       - the expected start date range is correct (earliest and latest dates, MM/YY)
       - limited banners must last at least one day
       - limited banners end in the same ISO week they start in
+      - no limited banners overlap each other
+      - all limited banners cards are SR or UR rarity
+      - name of each card, or its series, is in the banner text (Japanese only,
+          needs master_chara and master_series)
 
     Raises ValueError if verification fails.
     """
     _verify_gacha_data_start_date_range(data)
     _verify_gacha_data_date_duration(data)
     _verify_gacha_data_no_overlapping_date_ranges(data)
+    _verify_gacha_data_rarity_sr_or_ur(data)
+
+    if master_chara is not None:
+        master_chara_dict = {x['ID']: x for x in master_chara[1:]}
+
+        if master_series is not None:
+            master_series_dict = {x['ID']: x for x in master_series[1:]}
+            _verify_gacha_data_series_name_in_banner_text_ja(data, master_chara_dict,
+                                                             master_series_dict)
+
+def _verify_common_gacha_data(
+        data: List[dict],
+        master_chara: List[dict] | None = None,
+        master_series: List[dict] | None = None
+    ):
+    """Verify all the common gacha data is complete and accurate.
+
+    _verify_common_gacha_data should be called for the combined list of limited
+    and permanent data after using _verify_limited_gacha_data.
+
+    master_chara and master_series are optional parameters that use data from game files
+    to perform additional checks.
+    set_card_names_from_master_gacha should also be called first if using game data for
+    additional checks.
+
+    Checks perfomed:
+      - no card IDs appear twice
+      - chara ID and rarity of cards matches master_chara (needs master_chara)
+      - card's character name is in the description text (Japanese only,
+          needs master_chara)
+      - name of each card, or its series, is in the description text (Japanese only,
+          needs master_chara and master_series)
+
+    Raises ValueError if verification fails.
+    """
+    _verify_gacha_data_no_duplicate_cards(data)
+
+    if master_chara is not None:
+        master_chara_dict = {x['ID']: x for x in master_chara[1:]}
+        _verify_gacha_data_chara_and_rarity_against_game(data, master_chara_dict)
+        _verify_gacha_data_chara_name_in_desc_text_ja(data, master_chara_dict)
+
+        if master_series is not None:
+            master_series_dict = {x['ID']: x for x in master_series[1:]}
+            _verify_gacha_data_series_name_in_desc_text_ja(data, master_chara_dict,
+                                                           master_series_dict)
+
+def verify_gacha_data(
+        limited_data: List[dict],
+        permanent_data: List[dict],
+        master_chara: List[dict] | None = None,
+        master_series: List[dict] | None = None
+    ):
+    """Verify that the gacha data is complete and accurate.
+
+    master_chara and master_series are optional parameters that use data from game files
+    to perform additional checks.
+    set_card_names_from_master_gacha should also be called first if using game data for
+    additional checks.
+
+    Checks performed for limited rotation data:
+      - the expected start date range is correct (earliest and latest dates, MM/YY)
+      - limited banners must last at least one day
+      - limited banners end in the same ISO week they start in
+      - no limited banners overlap each other
+      - all limited banners cards are SR or UR rarity
+      - name of each card, or its series, is in the banner text (Japanese only,
+          needs master_chara and master_series)
+
+    Checks perfomed for all data:
+      - no card IDs appear twice
+      - chara ID and rarity of cards matches master_chara (needs master_chara)
+      - card's character name is in the description text (Japanese only,
+          needs master_chara)
+      - name of each card, or its series, is in the description text (Japanese only,
+          needs master_chara and master_series)
+
+    Raises ValueError if verification fails.
+    """
+    _verify_limited_gacha_data(limited_data, master_chara, master_series)
+    _verify_common_gacha_data(limited_data + permanent_data, master_chara, master_series)
