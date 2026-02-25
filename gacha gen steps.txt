@@ -25,4 +25,6 @@ banner image generation:
   Then use colorgram.py to extract a palette for text.
   Then place the evolved artwork of each (or a random selection of) limited cards over it.
   Then create text overlays ("プレミアムガチャ" and the banner text, plus "◯曜日まで").
+    - banner text: white with dark stroke
+    - "プレミアムガチャ" text: gold gradient with yellow and contrasting strokes
 
