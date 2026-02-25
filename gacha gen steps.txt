@@ -3,60 +3,8 @@ gacha_detail_daily: same as above, but for daily 6x paid jewel pull
 gacha_main: sets the gacha type, name, image, description text, start/end times, cost, details to use, etc. higher IDs take priority
 
 
-rough steps for loading/parsing data from spreadsheets, for planning purposes (may not match final implementation) are below.
-exporting to json is wip.
-
-
-parsing card ID and rarity from spreadsheets:
-  1. split on comma, each element is a separate card for same character
-  2. split each card on space, first element is in ("UR", "SR", "R", "N"), second element is card ID (integer)
-  3. store each card as a dictionary for now?
-
-
-converting from per-character columns to single cards column:
-  1. lookup each character name column in row (iterate through list of (chara column name, chara ID) tuples)
-    a. add character ID to card data
-    b. append cards to output list
-    c. delete column
-  2. add new column for all cards, value is the output list
-
-
-converting ISO week number with decimal to week and date offset:
-  1. integer part is week number
-  2. fractional part times 7 is offset (convert to integer/discard remainder, e.g. 0.5 => 3 days)
-
-
-loading/parsing spreadsheets:
-  1. transpose (because entered as columnar data rather than rows - just personal preference for a timeline)
-  2. verify first row contains all expected columns, create list of (column index, column name) tuples
-  3. remove first row
-  4. for every other row, iterate columns list to find known columns -- add value to dictionary for row, with key == column name
-  5. parse card IDs and rarities (see above)
-  6. convert to single cards column (see above)
-  7. omit rows with no cards
-  8. convert week number to week and date offset (see above)
-
-
-checking completeness and accuracy of spreadsheets:
-  1. create a list for cards "seen" in rotation+permanent sheets
-  2. for each row of each sheet:
-    a. verify start date range (for limited only):
-      i.   earliest should match day of that ISO week in 2004 (leap year starting on thursday)
-      ii.  latest should match day of that ISO week in 2010 (common year starting on friday)
-    b. verify duration makes sense (for limited only):
-      i.   duration > 0
-      ii.  date offset plus duration should be less than or equal to 7
-      iii. if another row shares the same integer week and has a higher offset, duration must not exceed difference between offsets
-    c. for each card in the row:
-      i.   check whether card ID is already in seen -- if yes, error (duplicate card)
-      ii.  store card ID to seen cards
-      iii. if limited rotation sheet, verify that rarity is SR or UR
-      iv.  verify that chara ID and rarity match with master_chara (for that card ID)
-      v.   verify that series name (either from card name or master_series) is present in banner and rarity's description text
-      vi.  verify that chara name is present in rarity's description text
-  3. for each card in master_chara:
-    a. if card is an event/promo or birthday card, or below SR rarity, skip it
-    b. otherwise, verify that it is in the seen cards list -- if no, error (missing card in sheets)
+rough steps for preparing gacha data will go here (wip).
+parsing/verification steps removed because implementation is complete and takes priority.
 
 
 calculating detail sheet "PER":
@@ -69,3 +17,12 @@ calculating detail sheet "PER":
     2. Build a set of all denominators, find least common multiple of them
     3. Assert LCM is a sane value (e.g. fits in s16 integer)
     4. Convert frations to have LCM as denominator, take numerator as PER
+
+
+banner image generation:
+  Gacha banners are 500x120 PNG files.
+  Start by filling with the set background.
+  Then use colorgram.py to extract a palette for text.
+  Then place the evolved artwork of each (or a random selection of) limited cards over it.
+  Then create text overlays ("プレミアムガチャ" and the banner text, plus "◯曜日まで").
+

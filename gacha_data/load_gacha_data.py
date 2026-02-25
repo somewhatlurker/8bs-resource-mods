@@ -395,14 +395,14 @@ def _verify_gacha_data_series_name_in_banner_text_ja(
         for card in row['CARDS']:
             series_name_from_card = card.get_series_name()
             if series_name_from_card:
-                if series_name_from_card in row['BANNER_TEXT_JA']: continue
+                if f'「{series_name_from_card}」' in row['BANNER_TEXT_JA']: continue
 
             master_chara_card = master_chara_dict.get(card.id)
             if not master_chara_card:
                 raise ValueError(f'Card {card.id} not in master_chara')
 
             series = master_series_dict[master_chara_card['SERIES']]
-            if series['NAME'] in row['BANNER_TEXT_JA']: continue
+            if f'「{series["NAME"]}」' in row['BANNER_TEXT_JA']: continue
 
             raise ValueError(f'Card {card.id} series missing in banner text')
 
@@ -426,14 +426,14 @@ def _verify_gacha_data_series_name_in_desc_text_ja(
 
             series_name_from_card = card.get_series_name()
             if series_name_from_card:
-                if series_name_from_card in row[desc_field]: continue
+                if f'【{series_name_from_card}】' in row[desc_field]: continue
 
             master_chara_card = master_chara_dict.get(card.id)
             if not master_chara_card:
                 raise ValueError(f'Card {card.id} not in master_chara')
 
             series = master_series_dict[master_chara_card['SERIES']]
-            if series['NAME'] in row[desc_field]: continue
+            if f'【{series["NAME"]}】' in row[desc_field]: continue
 
             raise ValueError(f'Card {card.id} series missing in description text')
 
@@ -460,6 +460,54 @@ def _verify_gacha_data_chara_name_in_desc_text_ja(
                 if chara_name_from_card in row[desc_field]: continue
 
             raise ValueError(f'Card {card.id} chara name missing in description text')
+
+def _verify_gacha_data_no_missing_cards(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict]
+    ):
+    """Verify that all expected cards from master_chara are present in the gacha data.
+
+    Event/promo series and birthday cards are ignored.
+    Cards below SR rarity are also ignored.
+    """
+    seen_cards = set()
+
+    for row in data:
+        for card in row['CARDS']:
+            seen_cards.add(card.id)
+
+    for card in master_chara_dict.values():
+        # skip event/promo series
+        if card['SERIES'] == 17: continue
+        # skip birthday cards
+        if '【お誕生日】' in card['NAME']: continue
+        # skip below SR rarity
+        if card['RARE'] < 3: continue
+        # error if not in seen_cards
+        if card['ID'] not in seen_cards:
+            raise ValueError(f'Card {card["ID"]} missing from gacha data')
+
+def _verify_gacha_data_no_event_or_birthday_cards(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict]
+    ):
+    """Verify that no event or birthday cards are present in the gacha data."""
+    seen_cards = set()
+
+    for row in data:
+        for card in row['CARDS']:
+            seen_cards.add(card.id)
+
+    for card in master_chara_dict.values():
+        is_event_or_birthday = False
+        # event/promo series
+        if card['SERIES'] == 17: is_event_or_birthday = True
+        # birthday cards
+        if '【お誕生日】' in card['NAME']: is_event_or_birthday = True
+
+        if is_event_or_birthday:
+            if card['ID'] in seen_cards:
+                raise ValueError(f'Event or birthday card {card["ID"]} in gacha data')
 
 def _verify_limited_gacha_data(
         data: List[dict],
@@ -518,6 +566,8 @@ def _verify_common_gacha_data(
     Checks perfomed:
       - no card IDs appear twice
       - chara ID and rarity of cards matches master_chara (needs master_chara)
+      - all expected cards from master_chara are present (needs master_chara)
+      - no event or birthday cards are present (needs master_chara)
       - card's character name is in the description text (Japanese only,
           needs master_chara)
       - name of each card, or its series, is in the description text (Japanese only,
@@ -530,6 +580,8 @@ def _verify_common_gacha_data(
     if master_chara is not None:
         master_chara_dict = {x['ID']: x for x in master_chara[1:]}
         _verify_gacha_data_chara_and_rarity_against_game(data, master_chara_dict)
+        _verify_gacha_data_no_missing_cards(data, master_chara_dict)
+        _verify_gacha_data_no_event_or_birthday_cards(data, master_chara_dict)
         _verify_gacha_data_chara_name_in_desc_text_ja(data, master_chara_dict)
 
         if master_series is not None:
@@ -562,6 +614,8 @@ def verify_gacha_data(
     Checks perfomed for all data:
       - no card IDs appear twice
       - chara ID and rarity of cards matches master_chara (needs master_chara)
+      - all expected cards from master_chara are present (needs master_chara)
+      - no event or birthday cards are present (needs master_chara)
       - card's character name is in the description text (Japanese only,
           needs master_chara)
       - name of each card, or its series, is in the description text (Japanese only,
