@@ -10,8 +10,10 @@
 
 from io import BytesIO
 import json
+import random
 from typing import List
 
+import colorgram
 from PIL import Image, ImageDraw, ImageFont
 
 from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
@@ -214,7 +216,6 @@ def _gen_banner_text_image(text, bg_colour, outline_colour) -> Image.Image:
             colour = bg_colour + (alpha,)
         bg_colours.append(colour)
     bg_colours = tuple(bg_colours)
-    print (bg_colours)
     bg_image = _draw_1px_horizontal_gradient(image_size[0], bg_colours)
     image = bg_image.resize(image_size)
 
@@ -244,18 +245,20 @@ def _gen_banner_text_image(text, bg_colour, outline_colour) -> Image.Image:
     return image
 
 
-def gen_gacha_banner_image(
-        limited_gacha_data_dict: dict,
-        permanent_gacha_data: List[dict],
-        output_gacha_id: int,
+def _gen_gacha_banner_image_internal(
+        bg_name: str,
+        card_image_files: List[str],
+        description_text: str,
         resource_path: str,
         ver: int
     ) -> Image.Image:
-    bg_file = DEFAULT_BANNER_BG
-    if limited_gacha_data_dict:
-        bg_file = limited_gacha_data_dict.get('BANNER_BG', bg_file)
+    if not bg_name:
+        bg_name = DEFAULT_BANNER_BG
+    # TODO: handle split bg
+    if '/' in bg_name:
+        bg_name = bg_name.split('/')[0]
 
-    bg_bytes = read_file(resource_path, ver, f'image/bg/{bg_file}.png')
+    bg_bytes = read_file(resource_path, ver, f'image/bg/{bg_name}.png')
     banner_image = Image.open(BytesIO(bg_bytes))
     # convert to RGBA because input may be indexed colour
     banner_image = banner_image.convert('RGBA')
@@ -274,25 +277,105 @@ def gen_gacha_banner_image(
     # resize to 500x120
     banner_image = banner_image.resize((500, 120))
 
-    # TODO: extract dominant colours (colorgram.py)
+    # extract dominant colours (colorgram.py)
+    dominant_colours = colorgram.extract(banner_image, 4)
+    darkest_dominant_colour = dominant_colours[0]
+    lightest_dominant_colour = dominant_colours[0]
+    saturated_dominant_colour = dominant_colours[0]
+    for colour in dominant_colours:
+        if colour.hsl[2] < darkest_dominant_colour.hsl[2]:
+            darkest_dominant_colour = colour
+        if colour.hsl[2] > lightest_dominant_colour.hsl[2]:
+            lightest_dominant_colour = colour
+        if colour.hsl[1] > saturated_dominant_colour.hsl[1]:
+            saturated_dominant_colour = colour
 
-    # TODO: add limited cards
+    # add card images
+    card_image_bytes = [read_file(resource_path, ver, f) for f in card_image_files]
+    card_images = [Image.open(BytesIO(b)) for b in card_image_bytes]
+    for i, image in enumerate(card_images):
+        image = image.convert('RGBA')
+        scale_width = banner_image.height
+        scale_height = image.height * scale_width // image.width
+        image = image.resize((scale_width, scale_height))
+        card_images[i] = image
+
+    card_image_pos = []
+    if len(card_images) >= 1:
+        if len(card_images) < 3:
+            card_image_pos.append((card_images[0].width // 8, 0))
+        else:
+            card_image_pos.append((-card_images[0].width // 6, 0))
+    if len(card_images) >= 2:
+        if len(card_images) < 4:
+            card_image_pos.append((banner_image.width - card_images[1].width * 9 // 8, 0))
+        else:
+            card_image_pos.append((banner_image.width - card_images[1].width * 5 // 6, 0))
+    if len(card_images) >= 3:
+        card_image_pos.append((card_images[2].width // 2, 0))
+    if len(card_images) >= 4:
+        card_image_pos.append((banner_image.width - card_images[3].width * 3 // 2, 0))
+
+    for i in range(len(card_image_pos)-1, -1, -1):
+        banner_image.alpha_composite(card_images[i], card_image_pos[i])
 
     # add title text
-    title_text = _gen_premiumgacha_text_image((0, 0, 0, 191))
+    title_text = _gen_premiumgacha_text_image(saturated_dominant_colour.rgb + (220,))
     title_text_left = (banner_image.width - title_text.width) // 2
-    title_text_upper = (banner_image.height - title_text.height) * 5 // 6
+    if description_text:
+        title_text_upper = (banner_image.height - title_text.height) * 5 // 6
+    else:
+        title_text_upper = (banner_image.height - title_text.height) * 4 // 6
     banner_image.alpha_composite(title_text, (title_text_left, title_text_upper))
 
     # add banner text
-    # TODO: get from limited banner data
-    desc_text = _gen_banner_text_image('Banner\nDescription 2nd Line', (10, 220, 255, 191),
-                                       (191, 31, 191, 255))
-    desc_text_left = (banner_image.width - desc_text.width) // 2
-    desc_text_upper = (banner_image.height - desc_text.height) * 1 // 6
-    banner_image.alpha_composite(desc_text, (desc_text_left, desc_text_upper))
+    if description_text:
+        desc_text = _gen_banner_text_image(description_text,
+                                           lightest_dominant_colour.rgb + (220,),
+                                           darkest_dominant_colour.rgb + (255,))
+        desc_text_left = (banner_image.width - desc_text.width) // 2
+        desc_text_upper = (banner_image.height - desc_text.height) * 1 // 6
+        banner_image.alpha_composite(desc_text, (desc_text_left, desc_text_upper))
 
     return banner_image
+
+def gen_gacha_banner_image_ja(
+        limited_gacha_data_dict: dict,
+        output_gacha_id: int,
+        resource_path: str,
+        ver: int
+    ) -> Image.Image:
+    if limited_gacha_data_dict:
+        bg_name = limited_gacha_data_dict.get('BANNER_BG')
+        image_cards = [card.id for card in limited_gacha_data_dict['CARDS']
+                       if card.rarity == 4]
+        description_text = limited_gacha_data_dict.get('BANNER_TEXT_JA')
+    else:
+        bg_name = None
+        image_cards = []
+        description_text = None
+
+    # randomly remove some cards if more than four
+    rd = random.Random(output_gacha_id)
+    if len(image_cards) > 4:
+        while len(image_cards) > 4:
+            idx = rd.randrange(len(image_cards))
+            del image_cards[idx]
+
+    # then randomly shuffle them
+    shuffled_image_cards = []
+    while len(image_cards) > 0:
+        idx = rd.randrange(len(image_cards))
+        shuffled_image_cards.append(image_cards[idx])
+        del image_cards[idx]
+
+    return _gen_gacha_banner_image_internal(
+        bg_name,
+        [f'image/chara/stand/stand_chara{id}_2.png' for id in shuffled_image_cards],
+        description_text,
+        resource_path,
+        ver
+    )
 
 
 def gen_gacha_rotation(resource_path, ver):
@@ -313,12 +396,21 @@ def gen_gacha_rotation(resource_path, ver):
                       master_chara, master_series)
 
     gacha_id = max([row['ID'] for row in master_gacha_main[1:]]) + 1
-    perm_banner_image = gen_gacha_banner_image(None, permanent_gacha_data, gacha_id,
-                                               resource_path, ver)
 
+    perm_banner_image = _gen_gacha_banner_image_internal(None, [], None,
+                                                         resource_path, ver)
+    perm_banner_image = perm_banner_image.convert('RGB').convert('P')
     perm_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
-    print(limited_gacha_data)
-    print(permanent_gacha_data)
+    gacha_id += 1
+
+    for banner in limited_gacha_data:
+        lim_banner_image = gen_gacha_banner_image_ja(banner, gacha_id, resource_path, ver)
+        lim_banner_image = lim_banner_image.convert('RGB').convert('P')
+        lim_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
+        gacha_id += 1
+
+    # print(limited_gacha_data)
+    # print(permanent_gacha_data)
 
 if __name__ == '__main__':
     from sys import argv
