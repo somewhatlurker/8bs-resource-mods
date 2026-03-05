@@ -15,7 +15,7 @@ import random
 from PIL import Image
 
 from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
-    set_card_names_from_master_chara, verify_gacha_data
+    set_card_names_from_master_chara, set_card_series_from_master_chara, verify_gacha_data
 from gen_gacha_banner_image import gen_gacha_banner_image
 from util import read_json_decrypted
 
@@ -39,7 +39,7 @@ def gen_limited_gacha_banner_image_ja(
         image_cards = []
         description_text = None
 
-    is_single_chara_series = len(set([c.chara for c in image_cards])) == 1
+    is_single_chara_banner = len(set([c.chara for c in image_cards])) == 1
 
     # image_cards = [c.id for c in image_cards]
     # randomly remove some cards if more than four
@@ -56,24 +56,64 @@ def gen_limited_gacha_banner_image_ja(
     #     shuffled_image_cards.append(image_cards[idx])
     #     del image_cards[idx]
 
-    # randomly select up to four cards, max of one for each character in the banner
-    shuffled_image_cards = []
-    rd = random.Random(output_gacha_id)
-    for _ in range(4):
-        if len(image_cards) == 0: break
-        idx = rd.randrange(len(image_cards))
-        card = image_cards[idx]
-        shuffled_image_cards.append(card.id)
-        if is_single_chara_series:
-            # remove only the single card
-            del image_cards[idx]
-        else:
-            # remove all cards with same chara ID to prevent them from being chosen
-            image_cards = [c for c in image_cards if c.chara != card.chara]
+    if len(image_cards) and hasattr(image_cards[0], 'series'):
+        # split series up into separate lists so they're easier to keep track of
+        image_card_series = {}
+        for c in image_cards:
+            if c.series in image_card_series:
+                image_card_series[c.series].append(c)
+            else:
+                image_card_series[c.series] = [c]
+        image_card_series = [v for v in image_card_series.values()]
+
+        # randomly select up to four cards, max of one for each character in the banner
+        # round robin between series to ensure roughly fair representation
+        shuffled_image_cards = []
+        rd = random.Random(output_gacha_id)
+        series_idx = 0
+        for _ in range(4):
+            series_idx = (series_idx + 1) % len(image_card_series)
+            series = image_card_series[series_idx]
+            if len(series) == 0: continue
+
+            card_idx = rd.randrange(len(series))
+            card = series[card_idx]
+            shuffled_image_cards.append(card.id)
+            if is_single_chara_banner:
+                # remove only the single card
+                del series[card_idx]
+            else:
+                # remove all cards with same chara ID from all series
+                # to prevent them from being chosen
+                for i in range(len(image_card_series)):
+                    s = image_card_series[i]
+                    image_card_series[i] = [c for c in s if c.chara != card.chara]
+
+            # break loop if no remaining cards in any series
+            card_count = sum([len(s) for s in image_card_series])
+            if card_count == 0: break
+    else:
+        # randomly select up to four cards, max of one for each character in the banner
+        # (fallback for no series data)
+        shuffled_image_cards = []
+        rd = random.Random(output_gacha_id)
+        for _ in range(4):
+            if len(image_cards) == 0: break
+            idx = rd.randrange(len(image_cards))
+            card = image_cards[idx]
+            shuffled_image_cards.append(card.id)
+            if is_single_chara_banner:
+                # remove only the single card
+                del image_cards[idx]
+            else:
+                # remove all cards with same chara ID to prevent them from being chosen
+                image_cards = [c for c in image_cards if c.chara != card.chara]
+
 
     return gen_gacha_banner_image(
         bg_name,
         [f'image/chara/stand/stand_chara{id}_2.png' for id in shuffled_image_cards],
+        'プレミアム',
         description_text,
         resource_path,
         ver
@@ -93,6 +133,8 @@ def gen_gacha_rotation(resource_path, ver):
 
     set_card_names_from_master_chara(limited_gacha_data, master_chara)
     set_card_names_from_master_chara(permanent_gacha_data, master_chara)
+    set_card_series_from_master_chara(limited_gacha_data, master_chara)
+    set_card_series_from_master_chara(permanent_gacha_data, master_chara)
 
     verify_gacha_data(limited_gacha_data, permanent_gacha_data,
                       master_chara, master_series)
@@ -101,15 +143,16 @@ def gen_gacha_rotation(resource_path, ver):
     # go up to next multiple of 1000, so it's neat
     gacha_id = math.ceil(gacha_id / 1000) * 1000
 
-    perm_banner_image = gen_gacha_banner_image(None, [], None, resource_path, ver)
-    perm_banner_image = perm_banner_image.convert('RGB').convert('P')
+    perm_banner_image = gen_gacha_banner_image(None, [], 'プレミアム', None, resource_path,
+                                               ver)
+    perm_banner_image = perm_banner_image.convert('RGB').quantize()
     perm_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
     gacha_id += 1
 
     for banner in limited_gacha_data:
         lim_banner_image = gen_limited_gacha_banner_image_ja(banner, gacha_id,
                                                             resource_path, ver)
-        lim_banner_image = lim_banner_image.convert('RGB').convert('P')
+        lim_banner_image = lim_banner_image.convert('RGB').quantize()
         lim_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
         gacha_id += 1
 

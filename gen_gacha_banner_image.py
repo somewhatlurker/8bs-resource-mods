@@ -1,6 +1,7 @@
 from colorsys import hls_to_rgb
 from io import BytesIO
 import math
+import random
 from typing import List
 
 import colorgram
@@ -92,19 +93,22 @@ def _draw_vert_gradient_text(font, text, colours) -> Image:
     return output_image
 
 
-def _gen_premiumgacha_text_image(outline_colour) -> Image.Image:
-    """Create Image of "プレミアムガチャ" text with gradient fill and strokes."""
-    premium_bbox = BANNER_LARGE_FONT.getbbox('プレミアム')
+def _gen_gacha_title_text_image(title, outline_colour) -> Image.Image:
+    """Create Image of title (e.g. "プレミアムガチャ") text with gradient fill and strokes.
+
+    title parameter sets "プレミアム" part only
+    """
+    title_bbox = BANNER_LARGE_FONT.getbbox(title)
     gacha_bbox = BANNER_MEDIUM_FONT.getbbox('ガチャ')
 
     text_margin = math.ceil(BANNER_TITLE_TOTAL_STROKE_WIDTH)
-    premium_pos = (
-        text_margin - premium_bbox[0],
-        text_margin - premium_bbox[1]
+    title_pos = (
+        text_margin - title_bbox[0],
+        text_margin - title_bbox[1]
     )
     gacha_pos = (
-        premium_pos[0] + premium_bbox[2] + int(text_margin * 1.5),
-        premium_pos[1] + premium_bbox[3] - gacha_bbox[3]
+        title_pos[0] + title_bbox[2] + int(text_margin * 1.5),
+        title_pos[1] + title_bbox[3] - gacha_bbox[3]
     )
     image_size = (
         gacha_pos[0] + gacha_bbox[2] + text_margin,
@@ -115,8 +119,8 @@ def _gen_premiumgacha_text_image(outline_colour) -> Image.Image:
     image = Image.new('RGBA', image_size, (0, 0, 0, 0))
     d = ImageDraw.Draw(image)
     d.text(
-        premium_pos,
-        'プレミアム',
+        title_pos,
+        title,
         font=BANNER_LARGE_FONT,
         fill=outline_colour,
         stroke_fill=outline_colour,
@@ -131,8 +135,8 @@ def _gen_premiumgacha_text_image(outline_colour) -> Image.Image:
         stroke_width=BANNER_TITLE_TOTAL_STROKE_WIDTH
     )
     d.text(
-        premium_pos,
-        'プレミアム',
+        title_pos,
+        title,
         font=BANNER_LARGE_FONT,
         fill=BANNER_TITLE_INNER_STROKE_COLOUR,
         stroke_fill=BANNER_TITLE_INNER_STROKE_COLOUR,
@@ -149,8 +153,8 @@ def _gen_premiumgacha_text_image(outline_colour) -> Image.Image:
     # then create the inner drop shadow
     for offset in range(-1, 2):
         d.text(
-            (premium_pos[0] + offset, premium_pos[1] + offset),
-            'プレミアム',
+            (title_pos[0] + offset, title_pos[1] + offset),
+            title,
             font=BANNER_LARGE_FONT,
             fill=BANNER_TITLE_INNER_SHADOW_COLOUR
         )
@@ -161,16 +165,16 @@ def _gen_premiumgacha_text_image(outline_colour) -> Image.Image:
             fill=BANNER_TITLE_INNER_SHADOW_COLOUR
         )
     # then create and composite the gradient text images
-    premium_gradient_image = _draw_vert_gradient_text(BANNER_LARGE_FONT, 'プレミアム',
-                                                      BANNER_TITLE_GRADIENT_COLOURS)
+    title_gradient_image = _draw_vert_gradient_text(BANNER_LARGE_FONT, title,
+                                                    BANNER_TITLE_GRADIENT_COLOURS)
     gacha_gradient_image = _draw_vert_gradient_text(BANNER_MEDIUM_FONT, 'ガチャ',
                                                     BANNER_TITLE_GRADIENT_COLOURS)
-    image.alpha_composite(premium_gradient_image, tuple(x - 1 for x in premium_pos))
+    image.alpha_composite(title_gradient_image, tuple(x - 1 for x in title_pos))
     image.alpha_composite(gacha_gradient_image, tuple(x - 1 for x in gacha_pos))
 
     return image
 
-def _gen_banner_text_image(text, bg_colour, outline_colour) -> Image.Image:
+def _gen_banner_desc_text_image(text, bg_colour, outline_colour) -> Image.Image:
     """Create Image of banner description text with stroke and background."""
     text_margin = math.ceil(BANNER_DESCRIPTION_STROKE_WIDTH)
 
@@ -294,9 +298,27 @@ def _split_bg_image_mask(size, split_pos, angle):
     return mask_image
 
 
+def _filter_stand_bg_rings(image: Image.Image) -> Image.Image:
+    # ensure RGBA
+    image = image.convert('RGBA')
+
+    pixels = image.load()
+    for x in range(image.width):
+        for y in range(image.height):
+            colour = pixels[x, y]
+            alpha = colour[3]
+            alpha = alpha * 2 - 127
+            alpha = max(alpha, 0)
+            alpha = min(alpha, 255)
+            colour = colour[0:3] + (alpha,)
+            pixels[x, y] = colour
+
+    return image
+
 def gen_gacha_banner_image(
         bg_name: str,
         card_image_files: List[str],
+        title_text: str,
         description_text: str,
         resource_path: str,
         ver: int
@@ -374,25 +396,46 @@ def gen_gacha_banner_image(
         proportion = saturated_dominant_colour.proportion
         saturated_dominant_colour = colorgram.Color(*rgb, proportion)
 
-    # add card images
+    # load and resize card images
     card_image_bytes = [read_file(resource_path, ver, f) for f in card_image_files]
     card_images = [Image.open(BytesIO(b)) for b in card_image_bytes]
     for i, image in enumerate(card_images):
         image = image.convert('RGBA')
-        scale_width = banner_image.height
+        if len(card_images) <= 2:
+            scale_width = int(banner_image.height * 1.35)
+        elif len(card_images) == 3:
+            scale_width = int(banner_image.height * 1.2)
+        else:
+            scale_width = banner_image.height
         scale_height = image.height * scale_width // image.width
         image = image.resize((scale_width, scale_height))
+        image = _filter_stand_bg_rings(image)
         card_images[i] = image
+
+    # insert a dummy image in first or third slot sometimes if 1 or 3 images
+    # to randomise which side has only a single image
+    if len(card_images) in (1, 3):
+        rd = random.Random(description_text)
+        if rd.randrange(2):
+            card_images.insert(
+                len(card_images) - 1,
+                Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+            )
+            text_x_offset = -banner_image.width // 12
+        else:
+            text_x_offset = banner_image.width // 12
+    else:
+        text_x_offset = 0
 
     card_image_pos = []
     if len(card_images) >= 1:
         if len(card_images) < 3:
-            card_image_pos.append((card_images[0].width // 8, 0))
+            card_image_pos.append((0, 0))
         else:
             card_image_pos.append((-card_images[0].width // 6, 0))
     if len(card_images) >= 2:
-        if len(card_images) < 4:
-            card_image_pos.append((banner_image.width - card_images[1].width * 9 // 8, 0))
+        if len(card_images) < 3:
+            card_image_pos.append((banner_image.width - card_images[1].width, 0))
         else:
             card_image_pos.append((banner_image.width - card_images[1].width * 5 // 6, 0))
     if len(card_images) >= 3:
@@ -404,8 +447,9 @@ def gen_gacha_banner_image(
         banner_image.alpha_composite(card_images[i], card_image_pos[i])
 
     # add title text
-    title_text = _gen_premiumgacha_text_image(saturated_dominant_colour.rgb + (220,))
-    title_text_left = (banner_image.width - title_text.width) // 2
+    title_text = _gen_gacha_title_text_image(title_text,
+                                             saturated_dominant_colour.rgb + (220,))
+    title_text_left = (banner_image.width - title_text.width) // 2 + text_x_offset
     if description_text:
         title_text_upper = (banner_image.height - title_text.height) * 5 // 6
     else:
@@ -414,10 +458,10 @@ def gen_gacha_banner_image(
 
     # add banner text
     if description_text:
-        desc_text = _gen_banner_text_image(description_text,
-                                           lightest_dominant_colour.rgb + (220,),
-                                           darkest_dominant_colour.rgb + (255,))
-        desc_text_left = (banner_image.width - desc_text.width) // 2
+        desc_text = _gen_banner_desc_text_image(description_text,
+                                                lightest_dominant_colour.rgb + (220,),
+                                                darkest_dominant_colour.rgb + (255,))
+        desc_text_left = (banner_image.width - desc_text.width) // 2 + text_x_offset
         desc_text_upper = (banner_image.height - desc_text.height) * 1 // 6
         banner_image.alpha_composite(desc_text, (desc_text_left, desc_text_upper))
 

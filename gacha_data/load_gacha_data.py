@@ -37,17 +37,18 @@ CARD_NAME_REGEX = re.compile(r'^【(?P<series>.*)】(?P<chara>.*)')
 
 
 class CardDetail:
-    def __init__(self, chara: int, id: int, rarity: int):
+    def __init__(self, chara: int, id: int, rarity: int, series: int | None):
         self.chara = chara
         self.id = id
         self.name = None  # set later
         self.rarity = rarity
+        self.series = series
 
     def __str__(self) -> str:
         return f'{RARITY_ID_TO_NAME(self.rarity)} {self.id}'
 
     def __repr__(self) -> str:
-        return f'CardDetail({self.chara}, {self.id}, {self.rarity})'
+        return f'CardDetail({self.chara}, {self.id}, {self.rarity}, {self.series})'
 
     def get_chara_name(self) -> str:
         if not self.name:
@@ -164,7 +165,7 @@ def _parse_gacha_data_cards(data: List[dict]):
             new_cards = [x.strip() for x in stringval.split(',')]
             for cardstr in new_cards:
                 rarity, card_id = cardstr.split()
-                card = CardDetail(chara_id, int(card_id), RARITY_NAME_TO_ID[rarity])
+                card = CardDetail(chara_id, int(card_id), RARITY_NAME_TO_ID[rarity], None)
                 cards.append(card)
             del row[field]
         row['CARDS'] = cards
@@ -239,6 +240,22 @@ def set_card_names_from_master_chara(
             if not master_chara_card: continue
 
             card.name = master_chara_card['NAME']
+
+def set_card_series_from_master_chara(
+        data: List[dict],
+        master_chara: List[dict]
+    ):
+    """Set card series fields from data in master_chara.
+
+    Only applies to cards that are in master_gacha; others are ignored.
+    """
+    master_chara_dict = {x['ID']: x for x in master_chara[1:]}
+    for row in data:
+        for card in row['CARDS']:
+            master_chara_card = master_chara_dict.get(card.id)
+            if not master_chara_card: continue
+
+            card.series = master_chara_card['SERIES']
 
 
 def _verify_gacha_data_start_date_range(data: List[dict]):
