@@ -12,24 +12,25 @@ from util import read_file
 
 DEFAULT_BANNER_BG = 'bg_live_1'
 
-BANNER_FONT_PATH = 'fonts/BIZ_UDPMincho/BIZUDPMincho-Bold.ttf'
-BANNER_SMALL_FONT = ImageFont.truetype(BANNER_FONT_PATH, 16)
-BANNER_MEDIUM_FONT = ImageFont.truetype(BANNER_FONT_PATH, 24)
-BANNER_LARGE_FONT = ImageFont.truetype(BANNER_FONT_PATH, 40)
+BANNER_TITLE_FONT_PATH = 'fonts/BIZ_UDPMincho/BIZUDPMincho-Bold.ttf'
+BANNER_DESC_FONT_PATH = 'fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-SemiBold.ttf'
+BANNER_SMALL_FONT = ImageFont.truetype(BANNER_DESC_FONT_PATH, 16)
+BANNER_MEDIUM_FONT = ImageFont.truetype(BANNER_TITLE_FONT_PATH, 24)
+BANNER_LARGE_FONT = ImageFont.truetype(BANNER_TITLE_FONT_PATH, 40)
 
 BANNER_TITLE_GRADIENT_COLOURS = (
-    (255, 117, 20, 255), (255, 240, 40, 255), (255, 117, 20, 255)
+    (255, 120, 10, 255), (255, 247, 24, 255), (255, 120, 10, 255)
 )
-BANNER_TITLE_INNER_STROKE_COLOUR = (255, 240, 200, 255)
-BANNER_TITLE_INNER_STROKE_WIDTH = 3.4
+BANNER_TITLE_INNER_STROKE_COLOUR = (255, 240, 202, 255)
+BANNER_TITLE_INNER_STROKE_WIDTH = 3.3
 BANNER_TITLE_OUTER_STROKE_WIDTH = 2
 BANNER_TITLE_TOTAL_STROKE_WIDTH = BANNER_TITLE_INNER_STROKE_WIDTH + BANNER_TITLE_OUTER_STROKE_WIDTH
-BANNER_TITLE_INNER_SHADOW_COLOUR = (8, 2, 0, 191)
+BANNER_TITLE_INNER_SHADOW_COLOUR = (28, 6, 0, 191)
 
 BANNER_DESCRIPTION_BG_ALPHA = (0, 255, 255, 0)
 BANNER_DESCRIPTION_STROKE_WIDTH = 2
 BANNER_DESCRIPTION_TEXT_COLOUR = (255, 255, 255, 255)
-BANNER_DESCRIPTION_SPACE_QUOTES = True
+BANNER_DESCRIPTION_SPACE_QUOTES = False
 
 
 def _draw_1px_vertical_gradient(height, colours) -> Image:
@@ -176,7 +177,7 @@ def _gen_gacha_title_text_image(title, outline_colour) -> Image.Image:
 
 def _gen_banner_desc_text_image(text, bg_colour, outline_colour) -> Image.Image:
     """Create Image of banner description text with stroke and background."""
-    text_margin = math.ceil(BANNER_DESCRIPTION_STROKE_WIDTH)
+    text_margin = math.ceil(BANNER_DESCRIPTION_STROKE_WIDTH) + 1
 
     if BANNER_DESCRIPTION_SPACE_QUOTES:
         # hacky fix to make some proportional fonts look better
@@ -185,7 +186,7 @@ def _gen_banner_desc_text_image(text, bg_colour, outline_colour) -> Image.Image:
     lines = text.split('\n')
     # base metrics for first line
     text_bbox = BANNER_SMALL_FONT.getbbox(lines[0])
-    text_pos = (text_margin, text_margin)
+    text_pos = (text_margin, text_margin - text_bbox[1])
     image_size = [
         text_pos[0] + text_bbox[2] + text_margin,
         text_pos[1] + text_bbox[3] + text_margin
@@ -193,11 +194,13 @@ def _gen_banner_desc_text_image(text, bg_colour, outline_colour) -> Image.Image:
     # then adjust height and adjust width if necessary for each subsequent line
     font_metrics = BANNER_SMALL_FONT.getmetrics()
     font_height = font_metrics[0] + font_metrics[1]
-    image_size[1] = font_height + BANNER_DESCRIPTION_STROKE_WIDTH * 2
+    # image_size[1] = font_height + BANNER_DESCRIPTION_STROKE_WIDTH * 2
+    line_top = text_pos[1]
     for line in lines[1:]:
         # not sure if this is right for line height, but it's close enough
-        image_size[1] += font_metrics[0] + BANNER_DESCRIPTION_STROKE_WIDTH * 2
+        line_top += font_metrics[0] + BANNER_DESCRIPTION_STROKE_WIDTH * 2
         line_bbox = BANNER_SMALL_FONT.getbbox(line)
+        image_size[1] = line_top + line_bbox[3] + text_margin
         line_size_w = text_pos[0] + line_bbox[2] + text_margin
         if line_size_w > image_size[0]:
             image_size[0] = line_size_w
@@ -297,6 +300,45 @@ def _split_bg_image_mask(size, split_pos, angle):
 
     return mask_image
 
+def _clamp_colour_lightness(colour: colorgram.Color, min: int, max: int) -> colorgram.Color:
+    """Clamps lightness of colour to be within given range (inclusive)."""
+    if colour.hsl.l < min:
+        l = min
+    elif colour.hsl.l > max:
+        l = max
+    else:
+        return colour
+
+    # note: confirmed that colorsys hls is equal to colorgram hsl
+    # (except for potential rounding differences, but they're not too important)
+    hls = (
+        colour.hsl.h / 255,
+        l / 255,
+        colour.hsl.s / 255
+    )
+    rgb = tuple(int(x * 255) for x in hls_to_rgb(*hls))
+    proportion = colour.proportion
+    return colorgram.Color(*rgb, proportion)
+
+def _clamp_colour_sat(colour: colorgram.Color, min: int, max: int) -> colorgram.Color:
+    """Clamps saturation of colour to be within given range (inclusive)."""
+    if colour.hsl.s < min:
+        s = min
+    elif colour.hsl.s > max:
+        s = max
+    else:
+        return colour
+
+    # note: confirmed that colorsys hls is equal to colorgram hsl
+    # (except for potential rounding differences, but they're not too important)
+    hls = (
+        colour.hsl.h / 255,
+        colour.hsl.l / 255,
+        s / 255
+    )
+    rgb = tuple(int(x * 255) for x in hls_to_rgb(*hls))
+    proportion = colour.proportion
+    return colorgram.Color(*rgb, proportion)
 
 def _filter_stand_bg_rings(image: Image.Image) -> Image.Image:
     # ensure RGBA
@@ -350,51 +392,12 @@ def gen_gacha_banner_image(
             lightest_dominant_colour = colour
         if colour.hsl[1] > saturated_dominant_colour.hsl[1]:
             saturated_dominant_colour = colour
-    # ensure colours are distinct enough by fudging values
-    if darkest_dominant_colour.hsl.l > 91:
-        mult = 91 / darkest_dominant_colour.hsl.l
-        rgb = tuple(int(x * mult) for x in darkest_dominant_colour.rgb)
-        proportion = darkest_dominant_colour.proportion
-        darkest_dominant_colour = colorgram.Color(*rgb, proportion)
-    if lightest_dominant_colour.hsl.l < 160:
-        mult = 160 / lightest_dominant_colour.hsl.l
-        rgb = tuple(int(x * mult) for x in lightest_dominant_colour.rgb)
-        proportion = lightest_dominant_colour.proportion
-        lightest_dominant_colour = colorgram.Color(*rgb, proportion)
-    if saturated_dominant_colour.hsl.l > 191:
-        mult = 191 / saturated_dominant_colour.hsl.l
-        rgb = tuple(int(x * mult) for x in saturated_dominant_colour.rgb)
-        proportion = saturated_dominant_colour.proportion
-        saturated_dominant_colour = colorgram.Color(*rgb, proportion)
-    if saturated_dominant_colour.hsl.s < 127:
-        hls = (
-            saturated_dominant_colour.hsl.h / 255,
-            saturated_dominant_colour.hsl.l / 255,
-            127 / 255
-        )
-        rgb = tuple(int(x * 255) for x in hls_to_rgb(*hls))
-        proportion = saturated_dominant_colour.proportion
-        saturated_dominant_colour = colorgram.Color(*rgb, proportion)
-    if lightest_dominant_colour.hsl.s > 191:
-        # note: confirmed that colorsys hls is equal to colorgram hsl
-        # (except for potential rounding differences, but they're not too important)
-        hls = (
-            lightest_dominant_colour.hsl.h / 255,
-            lightest_dominant_colour.hsl.l / 255,
-            191 / 255
-        )
-        rgb = tuple(int(x * 255) for x in hls_to_rgb(*hls))
-        proportion = lightest_dominant_colour.proportion
-        lightest_dominant_colour = colorgram.Color(*rgb, proportion)
-    if saturated_dominant_colour.hsl.s > 191:
-        hls = (
-            saturated_dominant_colour.hsl.h / 255,
-            saturated_dominant_colour.hsl.l / 255,
-            191 / 255
-        )
-        rgb = tuple(int(x * 255) for x in hls_to_rgb(*hls))
-        proportion = saturated_dominant_colour.proportion
-        saturated_dominant_colour = colorgram.Color(*rgb, proportion)
+    # ensure colours are distinct enough by clamping values to safe-ish ranges
+    darkest_dominant_colour = _clamp_colour_lightness(darkest_dominant_colour, 0, 91)
+    lightest_dominant_colour = _clamp_colour_lightness(lightest_dominant_colour, 160, 255)
+    lightest_dominant_colour = _clamp_colour_sat(lightest_dominant_colour, 0, 191)
+    saturated_dominant_colour = _clamp_colour_lightness(saturated_dominant_colour, 0, 191)
+    saturated_dominant_colour = _clamp_colour_sat(saturated_dominant_colour, 127, 191)
 
     # load and resize card images
     card_image_bytes = [read_file(resource_path, ver, f) for f in card_image_files]
