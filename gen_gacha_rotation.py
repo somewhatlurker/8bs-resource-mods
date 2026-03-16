@@ -166,7 +166,7 @@ def gen_gacha_description_text_ja(
         lim_percent = GACHA_ODDS['LIMITED_SR']
         perm_percent = GACHA_ODDS['TOTAL_SR'] - lim_percent
         odds_text += f'(内訳：期間限定{lim_percent:.1f}% 通常{perm_percent:.1f}%)\n'
-    odds_text += f'SR[★★★]：{GACHA_ODDS['TOTAL_R']:.1f}%\n'
+    odds_text += f'R[★★]：{GACHA_ODDS['TOTAL_R']:.1f}%\n'
     if has_limited_r:
         lim_percent = GACHA_ODDS['LIMITED_R']
         perm_percent = GACHA_ODDS['TOTAL_R'] - lim_percent
@@ -183,7 +183,7 @@ def gen_gacha_description_text_ja(
         perm_desc_text = series.get('UR_DESC_TEXT_JA', '').strip()
         if perm_desc_text:
             contents_text += perm_desc_text + '\n'
-    contents_text += '\nSR[★★★★]\n'
+    contents_text += '\nSR[★★★]\n'
     if limited_gacha_data_dict:
         lim_desc_text = limited_gacha_data_dict.get('SR_DESC_TEXT_JA', '').strip()
         if lim_desc_text:
@@ -192,7 +192,7 @@ def gen_gacha_description_text_ja(
         perm_desc_text = series.get('SR_DESC_TEXT_JA', '').strip()
         if perm_desc_text:
             contents_text += perm_desc_text + '\n'
-    contents_text += '\nR[★★★★]\n'
+    contents_text += '\nR[★★]\n'
     if limited_gacha_data_dict:
         lim_desc_text = limited_gacha_data_dict.get('R_DESC_TEXT_JA', '').strip()
         if lim_desc_text:
