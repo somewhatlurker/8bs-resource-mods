@@ -16,7 +16,7 @@ from typing import List
 
 from PIL import Image
 
-from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
+from gacha_data.load_gacha_data import RARITY_NAME_TO_ID, load_and_parse_gacha_data_csv, \
     set_card_names_from_master_chara, set_card_series_from_master_chara, verify_gacha_data
 from gen_gacha_banner_image import gen_gacha_banner_image
 from util import read_json_decrypted
@@ -42,7 +42,16 @@ PERMANENT_DESCRIPTION_BANNER_TEXT = '「ステージ」「Anniversary」「ナ�
 ELEVEN_PULL_SR_GUARANTEE = True  # SR_SET
 
 
-def gen_limited_gacha_banner_image_ja(
+# matches with ID, but semantically different so define again
+RARITY_TO_STARS = {
+    'N': 1,
+    'R': 2,
+    'SR': 3,
+    'UR': 4
+}
+
+
+def _gen_limited_gacha_banner_image_ja(
         limited_gacha_data_dict: dict,
         output_gacha_id: int,
         resource_path: str,
@@ -123,10 +132,7 @@ def gen_limited_gacha_banner_image_ja(
     )
 
 
-def gen_gacha_description_text_ja(
-        permanent_gacha_data: List[dict],
-        limited_gacha_data_dict: dict
-    ) -> str:
+def _gacha_description_banner_text_ja(limited_gacha_data_dict: dict) -> str:
     if limited_gacha_data_dict:
         banner_text_raw = limited_gacha_data_dict.get('BANNER_TEXT_JA', '').strip()
         # remove newlines, balancing spaces around ampersands
@@ -137,75 +143,97 @@ def gen_gacha_description_text_ja(
         banner_text_raw = banner_text_raw.replace('& ', '&')
         banner_text_raw = banner_text_raw.replace(' &', '&')
 
-        banner_text = '<END_MONTH>月<END_DAY>日(<END_WEEKDAY_JA>)23:59まで\n'
+        banner_text = '<START_MONTH>月<START_DAY>日(<START_WEEKDAY_JA>)〜<END_MONTH>月<END_DAY>日(<END_WEEKDAY_JA>)23:59まで\n'
         banner_text += '期間限定で' + banner_text_raw + 'が登場！'
     else:
         banner_text = PERMANENT_DESCRIPTION_BANNER_TEXT
+
     if ELEVEN_PULL_SR_GUARANTEE:
         banner_text += '\n11回ガチャでレア度SR以上が1枚以上確定！'
-    banner_text += '\n\n'
 
-    if limited_gacha_data_dict:
-        all_cards = limited_gacha_data_dict['CARDS']
-        has_limited_ur = len([c for c in all_cards if c.rarity == 4]) > 0
-        has_limited_sr = len([c for c in all_cards if c.rarity == 3]) > 0
-        has_limited_r = len([c for c in all_cards if c.rarity == 2]) > 0
-    else:
-        has_limited_ur = False
-        has_limited_sr = False
-        has_limited_r = False
+    banner_text += '\n\n'
+    return banner_text
+
+def _gacha_description_odds_text_ja(limited_gacha_data_dict: dict):
+    def odds_string_for_rarity(rarity: str):
+        rarity = rarity.upper()
+        total_key = f'TOTAL_{rarity}'
+        limited_key = f'LIMITED_{rarity}'
+
+        if GACHA_ODDS.get(total_key, 0) == 0:
+            return ''
+
+        rarity_id = RARITY_NAME_TO_ID[rarity]
+        if limited_gacha_data_dict:
+            all_lim_cards = limited_gacha_data_dict['CARDS']
+            rarity_lim_cards = [c for c in all_lim_cards if c.rarity == rarity_id]
+            has_limited = len(rarity_lim_cards) > 0
+        else:
+            has_limited = False
+
+        text = f'{rarity}[{"★" * RARITY_TO_STARS[rarity]}]：{GACHA_ODDS[total_key]:.1f}%\n'
+        if has_limited:
+            lim_percent = GACHA_ODDS[limited_key]
+            perm_percent = GACHA_ODDS[total_key] - lim_percent
+            text += f'(内訳：期間限定{lim_percent:.1f}% 通常{perm_percent:.1f}%)\n'
+
+        return text
 
     odds_text = '<レアリティ別提供割合>\n'
-    odds_text += f'UR[★★★★]：{GACHA_ODDS['TOTAL_UR']:.1f}%\n'
-    if has_limited_ur:
-        lim_percent = GACHA_ODDS['LIMITED_UR']
-        perm_percent = GACHA_ODDS['TOTAL_UR'] - lim_percent
-        odds_text += f'(内訳：期間限定{lim_percent:.1f}% 通常{perm_percent:.1f}%)\n'
-    odds_text += f'SR[★★★]：{GACHA_ODDS['TOTAL_SR']:.1f}%\n'
-    if has_limited_sr:
-        lim_percent = GACHA_ODDS['LIMITED_SR']
-        perm_percent = GACHA_ODDS['TOTAL_SR'] - lim_percent
-        odds_text += f'(内訳：期間限定{lim_percent:.1f}% 通常{perm_percent:.1f}%)\n'
-    odds_text += f'R[★★]：{GACHA_ODDS['TOTAL_R']:.1f}%\n'
-    if has_limited_r:
-        lim_percent = GACHA_ODDS['LIMITED_R']
-        perm_percent = GACHA_ODDS['TOTAL_R'] - lim_percent
-        odds_text += f'(内訳：期間限定{lim_percent:.1f}% 通常{perm_percent:.1f}%)\n'
+    odds_text += odds_string_for_rarity('UR')
+    odds_text += odds_string_for_rarity('SR')
+    odds_text += odds_string_for_rarity('R')
+    odds_text += odds_string_for_rarity('N')
     odds_text += '\n'
+    return odds_text
+
+def _gacha_description_contents_text_ja(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict
+    ) -> str:
+    def contents_string_for_rarity(rarity: str):
+        rarity = rarity.upper()
+        desc_text_key = f'{rarity}_DESC_TEXT_JA'
+        total_key = f'TOTAL_{rarity}'
+
+        if GACHA_ODDS.get(total_key, 0) == 0:
+            return ''
+
+        text = f'{rarity}[{"★" * RARITY_TO_STARS[rarity]}]\n'
+
+        if limited_gacha_data_dict:
+            lim_desc_text = limited_gacha_data_dict.get(desc_text_key, '').strip()
+            if lim_desc_text:
+                text += '期間限定:\n' + lim_desc_text + '\n通常:\n'
+
+        for series in permanent_gacha_data:
+            perm_desc_text = series.get(desc_text_key, '').strip()
+            if perm_desc_text:
+                text += perm_desc_text + '\n'
+
+        if not text:
+            return ''
+
+        text += '\n'
+        return text
 
     contents_text = '<ガチャ内容>\n'
-    contents_text += 'UR[★★★★]\n'
-    if limited_gacha_data_dict:
-        lim_desc_text = limited_gacha_data_dict.get('UR_DESC_TEXT_JA', '').strip()
-        if lim_desc_text:
-            contents_text += '期間限定:\n' + lim_desc_text + '\n通常:\n'
-    for series in permanent_gacha_data:
-        perm_desc_text = series.get('UR_DESC_TEXT_JA', '').strip()
-        if perm_desc_text:
-            contents_text += perm_desc_text + '\n'
-    contents_text += '\nSR[★★★]\n'
-    if limited_gacha_data_dict:
-        lim_desc_text = limited_gacha_data_dict.get('SR_DESC_TEXT_JA', '').strip()
-        if lim_desc_text:
-            contents_text += '期間限定:\n' + lim_desc_text + '\n通常:\n'
-    for series in permanent_gacha_data:
-        perm_desc_text = series.get('SR_DESC_TEXT_JA', '').strip()
-        if perm_desc_text:
-            contents_text += perm_desc_text + '\n'
-    contents_text += '\nR[★★]\n'
-    if limited_gacha_data_dict:
-        lim_desc_text = limited_gacha_data_dict.get('R_DESC_TEXT_JA', '').strip()
-        if lim_desc_text:
-            contents_text += '期間限定:\n' + lim_desc_text + '\n通常:\n'
-    for series in permanent_gacha_data:
-        perm_desc_text = series.get('R_DESC_TEXT_JA', '').strip()
-        if perm_desc_text:
-            contents_text += perm_desc_text + '\n'
-    contents_text += '\n'
+    contents_text += contents_string_for_rarity('UR')
+    contents_text += contents_string_for_rarity('SR')
+    contents_text += contents_string_for_rarity('R')
+    contents_text += contents_string_for_rarity('N')
+    return contents_text
 
+def _gen_gacha_description_text_ja(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict
+    ) -> str:
+    banner_text = _gacha_description_banner_text_ja(limited_gacha_data_dict)
+    odds_text = _gacha_description_odds_text_ja(limited_gacha_data_dict)
+    contents_text = _gacha_description_contents_text_ja(permanent_gacha_data,
+                                                        limited_gacha_data_dict)
     footer_text = '・一部のメンバーはカード情報ボタンで初期ステータスを確認できます。\n'
     footer_text += '・期間限定で出るメンバーは、再度期間限定で登場する場合があります。'
-
     return banner_text + odds_text + contents_text + footer_text
 
 
@@ -239,12 +267,12 @@ def gen_gacha_rotation(resource_path, ver):
     gacha_id += 1
 
     for banner in limited_gacha_data:
-        lim_banner_image = gen_limited_gacha_banner_image_ja(banner, gacha_id,
-                                                            resource_path, ver)
+        lim_banner_image = _gen_limited_gacha_banner_image_ja(banner, gacha_id,
+                                                              resource_path, ver)
         lim_banner_image = lim_banner_image.convert('RGB').quantize()
         lim_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
 
-        desc_text = gen_gacha_description_text_ja(permanent_gacha_data, banner)
+        desc_text = _gen_gacha_description_text_ja(permanent_gacha_data, banner)
         with open(f'gacha_banners/banner{gacha_id}.txt', 'w', encoding='utf-8') as f:
             f.write(desc_text)
 
