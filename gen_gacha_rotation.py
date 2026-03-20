@@ -10,14 +10,17 @@
 
 from datetime import date
 from decimal import Decimal
+from fractions import Fraction
 import json
 import math
 import random
+from typing import List, Tuple
 
 from PIL import Image
 
-from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
-    set_card_names_from_master_chara, set_card_series_from_master_chara, verify_gacha_data
+from gacha_data.load_gacha_data import RARITY_ID_TO_NAME, load_and_parse_gacha_data_csv, \
+    set_card_names_from_master_chara, set_card_series_from_master_chara, \
+    set_card_gacha_bg_from_master_chara, verify_gacha_data
 from gen_gacha_banner_image import gen_gacha_banner_image
 from gen_gacha_description_text import gen_gacha_description_text_combined
 from util import read_json_decrypted
@@ -35,10 +38,13 @@ GACHA_ODDS = {
     'LIMITED_R': Decimal('10.0')   # should be unused, but put something here
 }
 # balance remainder to 100% with permanent R cards
-GACHA_ODDS['TOTAL_R'] = Decimal('100') - GACHA_ODDS['TOTAL_UR'] - GACHA_ODDS['TOTAL_SR'] \
-                      - GACHA_ODDS['LIMITED_R']
+GACHA_ODDS['TOTAL_R'] = Decimal('100') - GACHA_ODDS['TOTAL_UR'] - GACHA_ODDS['TOTAL_SR']
 
 ELEVEN_PULL_SR_GUARANTEE = True  # SR_SET
+
+# note: game seems to use 32 bit math to do pulls (signed in some places),
+# so this can be pretty large...  but keep it reasonable
+PER_TOTAL_MAX = 1000000
 
 
 def _gen_limited_gacha_banner_image_ja(
@@ -122,6 +128,141 @@ def _gen_limited_gacha_banner_image_ja(
     )
 
 
+def _gen_gacha_per_table(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict
+    ):
+    # Note: Gacha pulls are like a big spinner.
+    #  - Each card takes up "per" segments of the spinner.
+    #  - If it lands on the card, that's what you get.
+    #  - For example, card 1 has per=1, card 2 has per=2, card 3 has per=3.
+    #    Card 1 has a 1/6 chance. Card 2 has 2/6. Card 3 has 3/6.
+    #    (6 equals 1+2+3, the total of all per values)
+    #
+    # So basically, this finds the probability of each individual card
+    # (same for all of a given rarity and limited status), calculates a sutable total
+    # number of segments that allows for exact (or approximated if too large) integer
+    # number of segments per card, then scales card probabilities to reach that total.
+
+    def per_card_probability(appearance_rate_pct: Decimal, num_cards: int) -> Fraction:
+        if num_cards == 0:
+            return Fraction(0, 1)
+        p = Fraction(appearance_rate_pct / Decimal('100'))
+        mult = Fraction(1, num_cards)
+        return p * mult
+
+    # returns per_val_exact, per_val_integer, error
+    # (error is difference between exact and integer)
+    def per_val_and_err(
+            probability: Fraction,
+            per_total: int
+        ) -> Tuple[Fraction, int, Fraction]:
+        p = probability
+        per_exact = Fraction(p.numerator * per_total, p.denominator)
+        assert(per_exact / per_total == p)
+        per_int = int(per_exact)
+        error = per_exact - per_int
+        return per_exact, per_int, error
+
+    lims_by_rarity = {}
+    if limited_gacha_data_dict:
+        for rarity_id in RARITY_ID_TO_NAME.keys():
+            rarity_cards = [c for c in limited_gacha_data_dict.get('CARDS')
+                            if c.rarity == rarity_id]
+            if rarity_cards:
+                lims_by_rarity[rarity_id] = {'cards': rarity_cards, 'p': 0}
+
+    all_perm_cards = [c for series in permanent_gacha_data for c in series['CARDS']]
+    perms_by_rarity = {}
+    for rarity_id in RARITY_ID_TO_NAME.keys():
+        rarity_cards = [c for c in all_perm_cards if c.rarity == rarity_id]
+        if rarity_cards:
+            perms_by_rarity[rarity_id] = {'cards': rarity_cards, 'p': 0}
+
+    # find and gather probability per individual card of each type
+    all_probabilities = []
+    for rarity_id, rarity_name in RARITY_ID_TO_NAME.items():
+        if lims_by_rarity.get(rarity_id):
+            lim_rate = GACHA_ODDS.get(f'LIMITED_{rarity_name}', Decimal('0'))
+            p = per_card_probability(lim_rate, len(lims_by_rarity[rarity_id]['cards']))
+            lims_by_rarity[rarity_id]['p'] = p
+            all_probabilities.append(p)
+        else:
+            lim_rate = Decimal('0')
+
+        if perms_by_rarity.get(rarity_id):
+            perm_rate = GACHA_ODDS.get(f'TOTAL_{rarity_name}', Decimal('0')) - lim_rate
+            assert(perm_rate >= 0)
+            p = per_card_probability(perm_rate, len(perms_by_rarity[rarity_id]['cards']))
+            perms_by_rarity[rarity_id]['p'] = p
+            all_probabilities.append(p)
+
+    # try to find per value that can handle all cards exactly
+    lcm = math.lcm(*[p.denominator for p in all_probabilities])
+    # limit to a sane maximum though
+    per_total = min(PER_TOTAL_MAX, lcm)
+
+    table = []
+    for entry in lims_by_rarity.values():
+        per_exact, per_int, per_err = per_val_and_err(entry['p'], per_total)
+        for card in entry['cards']:
+            table.append({
+                'card': card,
+                'limited': True,
+                'per_exact': per_exact,
+                'per_int': per_int,
+                'per_err': per_err
+            })
+    for entry in perms_by_rarity.values():
+        per_exact, per_int, per_err = per_val_and_err(entry['p'], per_total)
+        for card in entry['cards']:
+            table.append({
+                'card': card,
+                'limited': False,
+                'per_exact': per_exact,
+                'per_int': per_int,
+                'per_err': per_err
+            })
+
+    # verify math hasn't gone wrong
+    sum_exacts = sum(e['per_exact'] for e in table)
+    assert(sum_exacts == per_total)
+
+    # if using an approximation, need to add a bit to calculated integer per values
+    # to reach desired per_total.
+    # do so by adding 1 to cards with highest error
+    if per_total < lcm:
+        # print(f'PER_TOTAL < LCM!!!, {per_total}, {lcm}')
+        diff = per_total - sum(e['per_int'] for e in table)
+        # note: shuffle cards so bias isn't introduced sequentially at start
+        highest_errs = sorted(
+            random.sample(table, k=len(table)),
+            key=lambda x: x['per_err'],
+            reverse=True
+        )[:diff]
+        for entry in highest_errs:
+            entry['per_int'] += 1
+            entry['per_err'] -= Fraction(1)
+
+    # again, verify the math, but now on integers
+    sum_ints = sum(e['per_int'] for e in table)
+    assert(sum_ints == per_total)
+
+    # reformat output a little for ergonomics
+    # (specifically, just match game's format)
+    output = [
+        {
+            'ID': e['card'].id,
+            'PER': e['per_int'],
+            'TOP': 1 if e['limited'] else 0,
+            'BG': e['card'].gacha_bg,
+            'MEMO': RARITY_ID_TO_NAME[e['card'].rarity]
+        }
+        for e in table
+    ]
+    return output
+
+
 def gen_gacha_rotation(resource_path, ver):
     master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
     master_chara = json.loads(master_chara)
@@ -137,6 +278,8 @@ def gen_gacha_rotation(resource_path, ver):
     set_card_names_from_master_chara(permanent_gacha_data, master_chara)
     set_card_series_from_master_chara(limited_gacha_data, master_chara)
     set_card_series_from_master_chara(permanent_gacha_data, master_chara)
+    set_card_gacha_bg_from_master_chara(limited_gacha_data, master_chara)
+    set_card_gacha_bg_from_master_chara(permanent_gacha_data, master_chara)
 
     verify_gacha_data(limited_gacha_data, permanent_gacha_data,
                       master_chara, master_series)
@@ -156,6 +299,10 @@ def gen_gacha_rotation(resource_path, ver):
     with open(f'gacha_banners/banner{gacha_id}.txt', 'w', encoding='utf-8') as f:
         f.write(perm_desc_text)
 
+    per_table = _gen_gacha_per_table(permanent_gacha_data, None)
+    with open(f'gacha_banners/table{gacha_id}.txt', 'w', encoding='utf-8') as f:
+        json.dump(per_table, f)
+
     gacha_id += 1
 
     for banner in limited_gacha_data:
@@ -169,6 +316,10 @@ def gen_gacha_rotation(resource_path, ver):
                                                             ELEVEN_PULL_SR_GUARANTEE)
         with open(f'gacha_banners/banner{gacha_id}.txt', 'w', encoding='utf-8') as f:
             f.write(lim_desc_text)
+
+        per_table = _gen_gacha_per_table(permanent_gacha_data, banner)
+        with open(f'gacha_banners/table{gacha_id}.txt', 'w', encoding='utf-8') as f:
+            json.dump(per_table, f)
 
         gacha_id += 1
 
