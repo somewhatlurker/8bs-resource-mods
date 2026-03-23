@@ -8,11 +8,12 @@
 
 # THIS IS A WORK IN PROGRESS! CURRENTLY ONLY LOADS/PARSES DATA!
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 import json
 import math
 import random
+from typing import List
 
 from PIL import Image
 
@@ -43,7 +44,7 @@ ELEVEN_PULL_SR_GUARANTEE = True  # SR_SET
 
 
 def _gen_limited_gacha_banner_image_ja(
-        limited_gacha_data_dict: dict,
+        limited_gacha_data_dict: dict | None,
         output_gacha_id: int,
         resource_path: str,
         ver: int
@@ -122,6 +123,116 @@ def _gen_limited_gacha_banner_image_ja(
     )
 
 
+def _gacha_list_entry(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict | None,
+        first_gacha_id: int,
+        resource_path: str,
+        ver: int
+    ) -> dict:
+    banner_image = _gen_limited_gacha_banner_image_ja(limited_gacha_data_dict,
+                                                      first_gacha_id, resource_path, ver)
+    banner_image = banner_image.convert('RGB').quantize()
+    # banner_image.save(f'gacha_banners/img_banner{first_gacha_id}.png')
+
+    desc_text = gen_gacha_description_text_combined(permanent_gacha_data,
+                                                    limited_gacha_data_dict, GACHA_ODDS,
+                                                    ELEVEN_PULL_SR_GUARANTEE)
+    # with open(f'gacha_banners/banner{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
+    #     f.write(desc_text)
+
+    per_table = gen_gacha_per_table(permanent_gacha_data, limited_gacha_data_dict,
+                                    GACHA_ODDS)
+    # with open(f'gacha_banners/table{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
+    #     json.dump(per_table, f)
+
+    print(f'Gacha entry generated, id={first_gacha_id}')
+
+    return {
+        'first_gacha_id': first_gacha_id,
+        'banner_image': banner_image,
+        'desc_text': desc_text,
+        'per_table': per_table,
+        'limited_data': limited_gacha_data_dict
+    }
+
+def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
+    limited_data = entry.get('limited_data')
+    if limited_data:
+        iso_week = limited_data['ISO_WEEK']
+        duration = limited_data['DURATION_DAYS']
+        date_offset = limited_data.get('DATE_OFFSET', 0)
+
+        start_date = date.fromisocalendar(year, iso_week, date_offset + 1)
+        # note: end_date is day *after* end, not day of end
+        end_date = start_date + timedelta(days=date_offset)
+    else:
+        start_date = None
+        end_date = None
+
+    weekdays_ja = {
+        0: '月',
+        1: '火',
+        2: '水',
+        3: '木',
+        4: '金',
+        5: '土',
+        6: '日'
+    }
+    weekdays_en = {
+        0: 'Mon',
+        1: 'Tue',
+        2: 'Wed',
+        3: 'Thu',
+        4: 'Fri',
+        5: 'Sat',
+        6: 'Sun'
+    }
+
+    desc_text = entry['desc_text'].replace('\n', '$')
+    if start_date:
+        desc_text = desc_text.replace('<START_MONTH>', str(start_date.month))
+        desc_text = desc_text.replace('<START_DAY>', str(start_date.day))
+        weekday = start_date.weekday()
+        desc_text = desc_text.replace('<START_WEEKDAY_JA>', weekdays_ja.get(weekday))
+        desc_text = desc_text.replace('<START_WEEKDAY_EN>', weekdays_en.get(weekday))
+    if end_date:
+        # description text says until 11:59 of day before end date in date
+        desc_end_date = end_date - timedelta(days=1)
+        desc_text = desc_text.replace('<END_MONTH>', str(desc_end_date.month))
+        desc_text = desc_text.replace('<END_DAY>', str(desc_end_date.day))
+        weekday = desc_end_date.weekday()
+        desc_text = desc_text.replace('<END_WEEKDAY_JA>', weekdays_ja.get(weekday))
+        desc_text = desc_text.replace('<END_WEEKDAY_EN>', weekdays_en.get(weekday))
+
+    return {
+        'ID': gacha_id,
+        'GACHA_TYPE': 0,  # regular premium gacha
+        'NAME': 'プレミアムガチャ',
+        'ORDER': 1,  # seems to be based on type
+        'BANNER': f'img_banner{entry["first_gacha_id"]}',
+        'DETAIL': desc_text,
+        'USE_ITEM': 2,  # jewels
+        'GACHA_1': 25,  # don't chang costs -- image assets have value hardcoded
+        'GACHA_10': 0,
+        'GACHA_11': 250,
+        'SR_SET': 1 if ELEVEN_PULL_SR_GUARANTEE else 0,
+        'SHEET': f'gacha_detail{entry["first_gacha_id"]}',
+        'SHEET_DAILY': f'gacha_detail{entry["first_gacha_id"]}',  # just reuse same sheet
+        'FROM_INSTALL': 0,
+        'START_YEAR': start_date.year if start_date else 0,
+        'START_MONTH': start_date.month if start_date else 0,
+        'START_DAY': start_date.day if start_date else 0,
+        'START_HOUR': 0,
+        'START_MINUTE': 0,
+        'END_YEAR': end_date.year if end_date else 0,
+        'END_MONTH': end_date.month if end_date else 0,
+        'END_DAY': end_date.day if end_date else 0,
+        'END_HOUR': 0,
+        'END_MINUTE': 0
+    }
+
+
 def gen_gacha_rotation(resource_path, ver):
     master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
     master_chara = json.loads(master_chara)
@@ -146,44 +257,32 @@ def gen_gacha_rotation(resource_path, ver):
     gacha_id = max([row['ID'] for row in master_gacha_main[1:]]) + 1
     # go up to next multiple of 1000, so it's neat
     gacha_id = math.ceil(gacha_id / 1000) * 1000
+    first_gacha_id = gacha_id  # first occurence of each entry
 
-    perm_banner_image = gen_gacha_banner_image(None, [], 'プレミアム', None, resource_path,
-                                               ver)
-    perm_banner_image = perm_banner_image.convert('RGB').quantize()
-    perm_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
+    permanent_gacha_entry = _gacha_list_entry(permanent_gacha_data, None, first_gacha_id,
+                                              resource_path, ver)
+    first_gacha_id += 1
 
-    perm_desc_text = gen_gacha_description_text_combined(permanent_gacha_data, None,
-                                                         GACHA_ODDS,
-                                                         ELEVEN_PULL_SR_GUARANTEE)
-    with open(f'gacha_banners/banner{gacha_id}.txt', 'w', encoding='utf-8') as f:
-        f.write(perm_desc_text)
-
-    per_table = gen_gacha_per_table(permanent_gacha_data, None, GACHA_ODDS)
-    with open(f'gacha_banners/table{gacha_id}.txt', 'w', encoding='utf-8') as f:
-        json.dump(per_table, f)
-
-    gacha_id += 1
-
+    limited_gacha_unique_entires = []
     for banner in limited_gacha_data:
-        lim_banner_image = _gen_limited_gacha_banner_image_ja(banner, gacha_id,
-                                                              resource_path, ver)
-        lim_banner_image = lim_banner_image.convert('RGB').quantize()
-        lim_banner_image.save(f'gacha_banners/img_banner{gacha_id}.png')
+        entry = _gacha_list_entry(permanent_gacha_data, banner, first_gacha_id,
+                                  resource_path, ver)
+        limited_gacha_unique_entires.append(entry)
+        first_gacha_id += 1
 
-        lim_desc_text = gen_gacha_description_text_combined(permanent_gacha_data, banner,
-                                                            GACHA_ODDS,
-                                                            ELEVEN_PULL_SR_GUARANTEE)
-        with open(f'gacha_banners/banner{gacha_id}.txt', 'w', encoding='utf-8') as f:
-            f.write(lim_desc_text)
+    # print(permanent_gacha_entry)
+    # print(limited_gacha_unique_entires)
 
-        per_table = gen_gacha_per_table(permanent_gacha_data, banner, GACHA_ODDS)
-        with open(f'gacha_banners/table{gacha_id}.txt', 'w', encoding='utf-8') as f:
-            json.dump(per_table, f)
+    master_gacha_rows = []
+    master_gacha_rows.append(_master_gacha_row(permanent_gacha_entry, first_gacha_id, 2025))
+    first_gacha_id += 1
 
-        gacha_id += 1
+    for year in range(2025, 2038):
+        for entry in limited_gacha_unique_entires:
+            master_gacha_rows.append(_master_gacha_row(entry, first_gacha_id, year))
+            first_gacha_id += 1
 
-    # print(limited_gacha_data)
-    # print(permanent_gacha_data)
+    print(master_gacha_rows)
 
 if __name__ == '__main__':
     from sys import argv
