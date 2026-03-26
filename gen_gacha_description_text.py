@@ -127,7 +127,7 @@ def _gacha_description_odds_text_en(
 
 def _gacha_description_contents_text_internal(
         permanent_gacha_data: List[dict],
-        limited_gacha_data_dict: dict,
+        limited_gacha_data_dict: dict | None,
         appearance_rates: dict,
         lang_code: str,
         main_heading: str,
@@ -144,7 +144,7 @@ def _gacha_description_contents_text_internal(
         if appearance_rates.get(total_key, 0) == 0:
             return ''
 
-        text = f'{rarity}[{"★" * RARITY_TO_STARS[rarity]}]\n'
+        text = ''
 
         if limited_gacha_data_dict:
             lim_desc_text = limited_gacha_data_dict.get(desc_text_key, '').strip()
@@ -159,7 +159,7 @@ def _gacha_description_contents_text_internal(
         if not text:
             return ''
 
-        text += '\n'
+        text = f'{rarity}[{"★" * RARITY_TO_STARS[rarity]}]\n' + text + '\n'
         return text
 
     contents_text = f'{main_heading}\n'
@@ -171,7 +171,7 @@ def _gacha_description_contents_text_internal(
 
 def _gacha_description_contents_text_ja(
         permanent_gacha_data: List[dict],
-        limited_gacha_data_dict: dict,
+        limited_gacha_data_dict: dict | None,
         appearance_rates: dict
     ) -> str:
     return _gacha_description_contents_text_internal(
@@ -186,7 +186,7 @@ def _gacha_description_contents_text_ja(
 
 def _gacha_description_contents_text_en(
         permanent_gacha_data: List[dict],
-        limited_gacha_data_dict: dict,
+        limited_gacha_data_dict: dict | None,
         appearance_rates: dict
     ) -> str:
     return _gacha_description_contents_text_internal(
