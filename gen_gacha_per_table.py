@@ -155,7 +155,7 @@ def gen_gacha_per_table(
             'ID': e['card'].id,
             'PER': e['per_int'],
             'TOP': 1 if e['limited'] else 0,
-            'BG': e['card'].gacha_bg,
+            'BG': e['card'].gacha_bg if e['card'].gacha_bg else 0,
             'MEMO': RARITY_ID_TO_NAME[e['card'].rarity]
         }
         for e in table

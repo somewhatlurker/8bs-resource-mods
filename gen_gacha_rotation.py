@@ -13,6 +13,7 @@ from decimal import Decimal
 from io import BytesIO
 import json
 import math
+from os.path import join as path_join
 import random
 from typing import Dict, List
 
@@ -25,7 +26,8 @@ from gen_gacha_banner_image import gen_gacha_banner_image
 from gen_gacha_description_text import _gacha_description_contents_text_en, \
     _gacha_description_contents_text_ja, gen_gacha_description_text_combined
 from gen_gacha_per_table import gen_gacha_per_table
-from util import read_json_decrypted
+from util import encrypt_replacements_json, read_json_decrypted, \
+                 replace_files_in_ver, replace_files_in_zip
 
 
 LIMITED_CSV_PATH = 'gacha_data/limited_rotation.csv'
@@ -535,13 +537,13 @@ def gen_gacha_rotation(resource_path, ver):
     # print(limited_gacha_unique_entires)
 
     master_gacha_rows = []
-    master_gacha_rows.append(_master_gacha_row(permanent_gacha_entry, first_gacha_id, 2025))
-    first_gacha_id += 1
+    master_gacha_rows.append(_master_gacha_row(permanent_gacha_entry, gacha_id, 2025))
+    gacha_id += 1
 
     for year in range(2025, 2038):
         for entry in limited_gacha_unique_entires:
-            master_gacha_rows.append(_master_gacha_row(entry, first_gacha_id, year))
-            first_gacha_id += 1
+            master_gacha_rows.append(_master_gacha_row(entry, gacha_id, year))
+            gacha_id += 1
 
     # print(master_gacha_rows)
 
@@ -554,6 +556,35 @@ def gen_gacha_rotation(resource_path, ver):
     for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
         first_id = entry['first_gacha_id']
         entry['banner_image'].save(f'gacha_md/static/gacha/img_banner{first_id}.png')
+
+
+    # add gacha detail sheets to ver
+    replacements = {}
+    for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
+        header_row = master_gacha_detail0[0]
+        full_table = [header_row] + entry['per_table']
+        first_id = entry["first_gacha_id"]
+        replacements[f'json/master_gacha_detail{first_id}.json'] = json.dumps(full_table)
+    replacements = encrypt_replacements_json(replacements)
+    zip_path = path_join(resource_path, str(ver), '1_json01.zip')
+    replace_files_in_zip(zip_path, replacements, if_exists=False)
+
+    # merge and replace master_gacha_main
+    master_gacha_main.extend(master_gacha_rows)
+    replacements = encrypt_replacements_json({
+        'json/master_gacha_main.json': json.dumps(master_gacha_main)
+    })
+    replace_files_in_ver(resource_path, ver, replacements)
+
+    # add images to ver
+    replacements = {}
+    for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
+        io = BytesIO()
+        entry['banner_image'].save(io, format='PNG')
+        first_id = entry["first_gacha_id"]
+        replacements[f'image/gacha/img_banner{first_id}.png'] = io.getvalue()
+    zip_path = path_join(resource_path, str(ver), '1_pkg.zip')
+    replace_files_in_zip(zip_path, replacements, if_exists=False)
 
 if __name__ == '__main__':
     from sys import argv
