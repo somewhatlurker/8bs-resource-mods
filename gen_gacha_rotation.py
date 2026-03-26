@@ -293,7 +293,7 @@ def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
 
         start_date = date.fromisocalendar(year, iso_week, date_offset + 1)
         # note: end_date is day *after* end, not day of end
-        end_date = start_date + timedelta(days=date_offset)
+        end_date = start_date + timedelta(days=duration)
     else:
         start_date = None
         end_date = None
