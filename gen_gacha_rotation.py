@@ -10,10 +10,11 @@
 
 from datetime import date, timedelta
 from decimal import Decimal
+from io import BytesIO
 import json
 import math
 import random
-from typing import List
+from typing import Dict, List
 
 from PIL import Image
 
@@ -21,7 +22,8 @@ from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
     set_card_names_from_master_chara, set_card_series_from_master_chara, \
     set_card_gacha_bg_from_master_chara, verify_gacha_data
 from gen_gacha_banner_image import gen_gacha_banner_image
-from gen_gacha_description_text import gen_gacha_description_text_combined
+from gen_gacha_description_text import _gacha_description_contents_text_en, \
+    _gacha_description_contents_text_ja, gen_gacha_description_text_combined
 from gen_gacha_per_table import gen_gacha_per_table
 from util import read_json_decrypted
 
@@ -42,6 +44,75 @@ GACHA_ODDS['TOTAL_R'] = Decimal('100') - GACHA_ODDS['TOTAL_UR'] - GACHA_ODDS['TO
 
 ELEVEN_PULL_SR_GUARANTEE = True  # SR_SET
 
+WEEKDAYS_JA = {
+    0: '月',
+    1: '火',
+    2: '水',
+    3: '木',
+    4: '金',
+    5: '土',
+    6: '日'
+}
+WEEKDAYS_EN = {
+    0: 'Mon',
+    1: 'Tue',
+    2: 'Wed',
+    3: 'Thu',
+    4: 'Fri',
+    5: 'Sat',
+    6: 'Sun'
+}
+
+MONTHS_JA = {
+    1: '1月',
+    2: '2月',
+    3: '3月',
+    4: '4月',
+    5: '5月',
+    6: '6月',
+    7: '7月',
+    8: '8月',
+    9: '9月',
+    10: '10月',
+    11: '11月',
+    12: '12月'
+}
+MONTHS_EN = {
+    1: 'Jan',
+    2: 'Feb',
+    3: 'Mar',
+    4: 'Apr',
+    5: 'May',
+    6: 'Jun',
+    7: 'Jul',
+    8: 'Aug',
+    9: 'Sep',
+    10: 'Oct',
+    11: 'Nov',
+    12: 'Dec'
+}
+
+HTML_TABLE_STRINGS_JA = {
+    'starts_on': 'Starts On',
+    'weekday_closest_to_date': '{weekday} closest to {date}',
+    'date_format': '%m月%d日',
+    'duration': 'Duration',
+    'suffix_days': '日',
+    'image': 'Image',
+    'contents': 'Limited Cards'
+}
+HTML_TABLE_STRINGS_EN = {
+    'starts_on': 'Starts On',
+    'weekday_closest_to_date': '{weekday} closest to {date}',
+    'date_format': '%m/%d',
+    'duration': 'Duration',
+    'suffix_days': ' Days',
+    'image': 'Image',
+    'contents': 'Limited Cards'
+}
+
+HTML_BANNER_IMAGE_PATH = 'static/gacha/img_banner{id}.png'
+
 
 def _gen_limited_gacha_banner_image_ja(
         limited_gacha_data_dict: dict | None,
@@ -49,6 +120,8 @@ def _gen_limited_gacha_banner_image_ja(
         resource_path: str,
         ver: int
     ) -> Image.Image:
+    # note: also works for permanent series, just provides nothing musch useful over
+    # calling gen_gacha_banner_image directly
     if limited_gacha_data_dict:
         bg_name = limited_gacha_data_dict.get('BANNER_BG')
         image_cards = [c for c in limited_gacha_data_dict['CARDS'] if c.rarity == 4]
@@ -123,6 +196,46 @@ def _gen_limited_gacha_banner_image_ja(
     )
 
 
+def _gacha_short_contents_text(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict | None,
+        appearance_rates: dict,
+        lang_code: str
+    ):
+    lang_code = lang_code.upper()
+
+    def contents_string_for_rarity(rarity: str):
+        rarity = rarity.upper()
+        desc_text_key = f'{rarity}_DESC_TEXT_{lang_code}'
+        total_key = f'TOTAL_{rarity}'
+
+        if appearance_rates.get(total_key, 0) == 0:
+            return ''
+
+        text = ''
+
+        if limited_gacha_data_dict:
+            lim_desc_text = limited_gacha_data_dict.get(desc_text_key, '').strip()
+            if lim_desc_text:
+                text += lim_desc_text + '\n'
+
+        for series in permanent_gacha_data:
+            perm_desc_text = series.get(desc_text_key, '').strip()
+            if perm_desc_text:
+                text += perm_desc_text + '\n'
+
+        if not text:
+            return ''
+
+        text = f'{rarity}:\n' + text + '\n'
+        return text
+
+    contents_text = contents_string_for_rarity('UR')
+    contents_text += contents_string_for_rarity('SR')
+    contents_text += contents_string_for_rarity('R')
+    contents_text += contents_string_for_rarity('N')
+    return contents_text.strip()
+
 def _gacha_list_entry(
         permanent_gacha_data: List[dict],
         limited_gacha_data_dict: dict | None,
@@ -141,6 +254,15 @@ def _gacha_list_entry(
     # with open(f'gacha_banners/banner{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
     #     f.write(desc_text)
 
+    perm_contents_text_ja = _gacha_short_contents_text(permanent_gacha_data, None,
+                                                       GACHA_ODDS, 'ja')
+    perm_contents_text_en = _gacha_short_contents_text(permanent_gacha_data, None,
+                                                       GACHA_ODDS, 'en')
+    limited_contents_text_ja = _gacha_short_contents_text([], limited_gacha_data_dict,
+                                                          GACHA_ODDS, 'ja')
+    limited_contents_text_en = _gacha_short_contents_text([], limited_gacha_data_dict,
+                                                          GACHA_ODDS, 'en')
+
     per_table = gen_gacha_per_table(permanent_gacha_data, limited_gacha_data_dict,
                                     GACHA_ODDS)
     # with open(f'gacha_banners/table{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
@@ -153,7 +275,11 @@ def _gacha_list_entry(
         'banner_image': banner_image,
         'desc_text': desc_text,
         'per_table': per_table,
-        'limited_data': limited_gacha_data_dict
+        'limited_data': limited_gacha_data_dict,
+        'perm_contents_text_ja': perm_contents_text_ja,
+        'perm_contents_text_en': perm_contents_text_en,
+        'limited_contents_text_ja': limited_contents_text_ja,
+        'limited_contents_text_en': limited_contents_text_en
     }
 
 def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
@@ -170,40 +296,21 @@ def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
         start_date = None
         end_date = None
 
-    weekdays_ja = {
-        0: '月',
-        1: '火',
-        2: '水',
-        3: '木',
-        4: '金',
-        5: '土',
-        6: '日'
-    }
-    weekdays_en = {
-        0: 'Mon',
-        1: 'Tue',
-        2: 'Wed',
-        3: 'Thu',
-        4: 'Fri',
-        5: 'Sat',
-        6: 'Sun'
-    }
-
     desc_text = entry['desc_text'].replace('\n', '$')
     if start_date:
         desc_text = desc_text.replace('<START_MONTH>', str(start_date.month))
         desc_text = desc_text.replace('<START_DAY>', str(start_date.day))
         weekday = start_date.weekday()
-        desc_text = desc_text.replace('<START_WEEKDAY_JA>', weekdays_ja.get(weekday))
-        desc_text = desc_text.replace('<START_WEEKDAY_EN>', weekdays_en.get(weekday))
+        desc_text = desc_text.replace('<START_WEEKDAY_JA>', WEEKDAYS_JA.get(weekday))
+        desc_text = desc_text.replace('<START_WEEKDAY_EN>', WEEKDAYS_EN.get(weekday))
     if end_date:
         # description text says until 11:59 of day before end date in date
         desc_end_date = end_date - timedelta(days=1)
         desc_text = desc_text.replace('<END_MONTH>', str(desc_end_date.month))
         desc_text = desc_text.replace('<END_DAY>', str(desc_end_date.day))
         weekday = desc_end_date.weekday()
-        desc_text = desc_text.replace('<END_WEEKDAY_JA>', weekdays_ja.get(weekday))
-        desc_text = desc_text.replace('<END_WEEKDAY_EN>', weekdays_en.get(weekday))
+        desc_text = desc_text.replace('<END_WEEKDAY_JA>', WEEKDAYS_JA.get(weekday))
+        desc_text = desc_text.replace('<END_WEEKDAY_EN>', WEEKDAYS_EN.get(weekday))
 
     return {
         'ID': gacha_id,
@@ -232,12 +339,166 @@ def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
         'END_MINUTE': 0
     }
 
+def _gen_limited_html_table(
+        entries: List[dict],
+        strings: Dict[str, str],
+        months: Dict[int, str],
+        weekdays: Dict[int, str],
+        contents_key: str,
+        indent: str='    '
+    ) -> str:
+    def limited_data_start_date_earliest(limited_data: dict):
+        iso_week = limited_data['ISO_WEEK']
+        duration = limited_data['DURATION_DAYS']
+        date_offset = limited_data.get('DATE_OFFSET', 0)
+
+        # 2004 was a leap year starting on Thursday, giving the earliest possible date
+        # for each ISO week.
+        return date.fromisocalendar(2004, iso_week, date_offset + 1)
+
+    def limited_data_end_date_latest(limited_data: dict):
+        iso_week = limited_data['ISO_WEEK']
+        duration = limited_data['DURATION_DAYS']
+        date_offset = limited_data.get('DATE_OFFSET', 0)
+
+        # 2010 was a common year starting on Friday, giving the latest possible date
+        # for each ISO week.
+        start_date_latest = date.fromisocalendar(2010, iso_week, date_offset + 1)
+        return start_date_latest + timedelta(days=date_offset)
+
+    def entry_is_fully_in_month(entry: dict, month: int):
+        limited_data = entry['limited_data']  # must have for this, exception is fine
+        iso_week = limited_data['ISO_WEEK']
+        duration = limited_data['DURATION_DAYS']
+        date_offset = limited_data.get('DATE_OFFSET', 0)
+
+        start_date_earliest = limited_data_start_date_earliest(limited_data)
+        end_date_latest = limited_data_end_date_latest(limited_data)
+
+        return start_date_earliest.month == month and end_date_latest.month == month
+
+    output = '<table>\n'
+    output += indent + '<tr>\n'
+    output += indent*2 + '<th class="month-header"></th>\n'
+    output += indent*2 + f'<th>{strings.get("starts_on")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("duration")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("image")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("contents")}</th>\n'
+    output += indent + '</tr>\n'
+
+    month_headers_until = 0   # how many entries already have their month header done
+                              # (i.e. don't need to create one)
+    alt_colour_class = False  # simple flag for whether to output with alt bg class
+
+    for i, entry in enumerate(entries):
+        limited_data = entry.get('limited_data')
+        if not limited_data:
+            month_headers_until += 1  # no row, so no month
+            continue
+
+        start_month = limited_data_start_date_earliest(limited_data).month
+        end_month = limited_data_end_date_latest(limited_data).month
+
+        output += indent + '<tr>\n'
+
+        # make new month headers if necessary
+        # two types of cell:
+        #   - transitional: spans multiple rows, transitions from one row colour to next
+        #        (used for rows that may span multiple months)
+        #   - standard: spans multiple rows, single solid colour
+        #        (used for rows that are completely within a single month)
+        if i >= month_headers_until:
+            is_standard = entry_is_fully_in_month(entry, start_month)
+
+            span = 1
+            for sub in entries[i+1:]:
+                if is_standard and entry_is_fully_in_month(sub, start_month):
+                    span += 1
+                elif not is_standard and not entry_is_fully_in_month(sub, end_month):
+                    span += 1
+                else:
+                    break
+
+            if is_standard:
+                colour_cls = 'row-color-alt' if alt_colour_class else 'row-color-main'
+                month_cls = f'month {colour_cls}'
+                month_text = months.get(start_month)
+                month_cell = f'<th class="{month_cls}" rowspan="{span}">{month_text}</td>'
+            else:
+                colour_cls = 'row-trans-main' if alt_colour_class else 'row-trans-alt'
+                month_cls = f'month {colour_cls}'
+                month_cell = f'<th class="{month_cls}" rowspan="{span}"></td>'
+
+            month_cell = indent*2 + month_cell + '\n'
+            month_headers_until = i + span
+            alt_colour_class = not alt_colour_class
+        else:
+            month_cell = ''
+
+        start_date_approx = limited_data_start_date_earliest(limited_data)
+        start_date_approx += timedelta(days=3)
+        weekday = weekdays.get(limited_data.get('DATE_OFFSET', 0))
+        date_str = start_date_approx.strftime(strings.get('date_format'))
+        starts_on_text = strings.get('weekday_closest_to_date').format(weekday=weekday,
+                                                                       date=date_str)
+        starts_on_cell = f'<td>{starts_on_text}</td>'
+        starts_on_cell = indent*2 + starts_on_cell + '\n'
+
+        duration_days = limited_data.get('DURATION_DAYS', 0)
+        duration_text = str(duration_days) + strings.get('suffix_days')
+        duration_cell = f'<td>{duration_text}</td>'
+        duration_cell = indent*2 + duration_cell + '\n'
+
+        image_path = HTML_BANNER_IMAGE_PATH.format(id=entry["first_gacha_id"])
+        image_tag = f'<img src="{image_path}" width=250 height=60 />'
+        image_tag = indent*3 + image_tag + '\n'
+        image_cell = indent*2 + '<td>\n' + image_tag + indent*2 + '</td>\n'
+
+        contents_text = entry.get(contents_key)
+        contents_text = contents_text.replace('\n', '<br>')
+        contents_cell = f'<td>{contents_text}</td>'
+        contents_cell = indent*2 + contents_cell + '\n'
+
+        output += month_cell
+        output += starts_on_cell
+        output += duration_cell
+        output += image_cell
+        output += contents_cell
+        output += indent + '</tr>\n'
+
+    output += '</table>'
+    return output
+
+def _gen_markdown_page_en(
+        permanent_gacha_entry: dict,
+        limited_gacha_unique_entires: List[dict]
+    ) -> str:
+    output = '# Gacha Timetable\n\n'
+
+    output += '## Permanent Gacha\n'
+    output += 'These cards are always available, '
+    output += 'regardless of whether there is a limited banner or not.\n\n'
+    image_path = HTML_BANNER_IMAGE_PATH.format(id=permanent_gacha_entry["first_gacha_id"])
+    output += f'![permanent gacha banner image]({image_path})\n\n'
+    contents_text = permanent_gacha_entry.get('perm_contents_text_en')
+    contents_text = contents_text.replace('\n', '<br>')
+    output += contents_text + '\n\n'
+
+    output += '## Limited Gacha\n'
+    output += 'These cards are only available for a short time during the set period.\n\n'
+    output += _gen_limited_html_table(limited_gacha_unique_entires, HTML_TABLE_STRINGS_EN,
+                                      MONTHS_EN, WEEKDAYS_EN, 'limited_contents_text_en')
+
+    return output
+
 
 def gen_gacha_rotation(resource_path, ver):
     master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
     master_chara = json.loads(master_chara)
     master_gacha_main = read_json_decrypted(resource_path, ver, 'json/master_gacha_main.json')
     master_gacha_main = json.loads(master_gacha_main)
+    master_gacha_detail0 = read_json_decrypted(resource_path, ver, 'json/master_gacha_detail0.json')
+    master_gacha_detail0 = json.loads(master_gacha_detail0)
     master_series = read_json_decrypted(resource_path, ver, 'json/master_series.json')
     master_series = json.loads(master_series)
 
@@ -282,7 +543,17 @@ def gen_gacha_rotation(resource_path, ver):
             master_gacha_rows.append(_master_gacha_row(entry, first_gacha_id, year))
             first_gacha_id += 1
 
-    print(master_gacha_rows)
+    # print(master_gacha_rows)
+
+
+    # output markdown page and web images
+    md = _gen_markdown_page_en(permanent_gacha_entry, limited_gacha_unique_entires)
+    with open(f'gacha_md/index.md', 'w', encoding='utf-8') as f:
+        f.write(md)
+
+    for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
+        first_id = entry['first_gacha_id']
+        entry['banner_image'].save(f'gacha_md/static/gacha/img_banner{first_id}.png')
 
 if __name__ == '__main__':
     from sys import argv
