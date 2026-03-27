@@ -6,8 +6,6 @@
 #  - Limited cards will be available in gacha alongside the permanent lineup
 #  - The cycle repeats yearly
 
-# THIS IS A WORK IN PROGRESS! CURRENTLY ONLY LOADS/PARSES DATA!
-
 from datetime import date, timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -23,8 +21,7 @@ from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
     set_card_names_from_master_chara, set_card_series_from_master_chara, \
     set_card_gacha_bg_from_master_chara, verify_gacha_data
 from gen_gacha_banner_image import gen_gacha_banner_image
-from gen_gacha_description_text import _gacha_description_contents_text_en, \
-    _gacha_description_contents_text_ja, gen_gacha_description_text_combined
+from gen_gacha_description_text import gen_gacha_description_text_combined
 from gen_gacha_per_table import gen_gacha_per_table
 from util import encrypt_replacements_json, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
