@@ -42,13 +42,14 @@ class CardDetail:
             chara: int,
             id: int,
             rarity: int,
+            name: int | None,
             series: int | None,
             gacha_bg: str | None
         ):
         self.chara = chara
         self.id = id
-        self.name = None  # set later
         self.rarity = rarity
+        self.name = name
         self.series = series
         self.gacha_bg = gacha_bg
 
@@ -56,7 +57,7 @@ class CardDetail:
         return f'{RARITY_ID_TO_NAME(self.rarity)} {self.id}'
 
     def __repr__(self) -> str:
-        return f'CardDetail({self.chara}, {self.id}, {self.rarity}, {self.series}, {self.gacha_bg})'
+        return f'CardDetail({self.chara}, {self.id}, {self.rarity}, {self.name}, {self.series}, {self.gacha_bg})'
 
     def get_chara_name(self) -> str:
         if not self.name:
@@ -173,7 +174,8 @@ def _parse_gacha_data_cards(data: List[dict]):
             new_cards = [x.strip() for x in stringval.split(',')]
             for cardstr in new_cards:
                 rarity, card_id = cardstr.split()
-                card = CardDetail(chara_id, int(card_id), RARITY_NAME_TO_ID[rarity], None, None)
+                card = CardDetail(chara_id, int(card_id), RARITY_NAME_TO_ID[rarity],
+                                  None, None, None)
                 cards.append(card)
             del row[field]
         row['CARDS'] = cards

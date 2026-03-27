@@ -9,15 +9,16 @@ from gacha_data.load_gacha_data import RARITY_ID_TO_NAME
 
 # note: game seems to use 32 bit math to do pulls (signed in some places),
 # so this can be pretty large (theoretically max s32 int)...  but keep it reasonable
+# (especially important because step-up gacha may inflate the total)
 PER_TOTAL_MAX = 1000000
 
 
-def gen_gacha_per_table(
+def gen_gacha_stepup_per_table(
         permanent_gacha_data: List[dict],
         limited_gacha_data_dict: dict,
         appearance_rates: dict
     ):
-    """Generate the rates detail sheet ("per" table) for a gacha series.
+    """Generate the rates detail sheet ("per" table) for a step-up gacha series.
 
     - appearance_rates should be a dictionary of str to Decimal, with the following keys:
         - LIMITED_UR
@@ -27,6 +28,8 @@ def gen_gacha_per_table(
         - LIMITED_R
         - TOTAL_R
         (values are percentage chance -- e.g. 2.0 == 2.0%)
+
+    All of the limited cards will be made into pickup cards.
 
     Call gacha_data.load_gacha_data.set_card_gacha_bg_from_master_chara on data first if
     BG field needs to be set.
@@ -156,8 +159,37 @@ def gen_gacha_per_table(
             'PER': e['per_int'],
             'TOP': 1 if e['limited'] else 0,
             'BG': e['card'].gacha_bg if e['card'].gacha_bg else 0,
+            'RARE': e['card'].rarity,
+            'PICKUP': 1 if e['limited'] else 0,
             'MEMO': RARITY_ID_TO_NAME[e['card'].rarity]
         }
         for e in table
     ]
     return output
+
+def gen_gacha_per_table(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict
+    ):
+    """Generate the rates detail sheet ("per" table) for a gacha series.
+
+    - appearance_rates should be a dictionary of str to Decimal, with the following keys:
+        - LIMITED_UR
+        - TOTAL_UR
+        - LIMITED_SR
+        - TOTAL_SR
+        - LIMITED_R
+        - TOTAL_R
+        (values are percentage chance -- e.g. 2.0 == 2.0%)
+
+    Call gacha_data.load_gacha_data.set_card_gacha_bg_from_master_chara on data first if
+    BG field needs to be set.
+    """
+    # This is same as for stepup gacha, but with some fields removed.
+    table = gen_gacha_stepup_per_table(permanent_gacha_data, limited_gacha_data_dict,
+                                       appearance_rates)
+    for row in table:
+        del row['RARE']
+        del row['PICKUP']
+    return table
