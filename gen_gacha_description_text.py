@@ -208,6 +208,10 @@ def gen_gacha_description_text_ja(
     ) -> str:
     """Generate English gacha description text.
 
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
     - appearance_rates should be a dictionary of str to Decimal, with the following keys:
         - LIMITED_UR
         - TOTAL_UR
@@ -235,6 +239,10 @@ def gen_gacha_description_text_en(
     ) -> str:
     """Generate English gacha description text.
 
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
     - appearance_rates should be a dictionary of str to Decimal, with the following keys:
         - LIMITED_UR
         - TOTAL_UR
@@ -262,6 +270,10 @@ def gen_gacha_description_text_combined(
     ) -> str:
     """Generate combined gacha description text (Japanese and English).
 
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
     - appearance_rates should be a dictionary of str to Decimal, with the following keys:
         - LIMITED_UR
         - TOTAL_UR
