@@ -219,7 +219,7 @@ def load_and_parse_gacha_data_csv(path: str):
         - SR_DESC_TEXT_EN: str
         - R_DESC_TEXT_JA: str
         - R_DESC_TEXT_EN: str
-        - CARDS: CardDetail
+        - CARDS: List[CardDetail]
       - Only keys with a value will be set
     """
     data = _load_gacha_data_csv(path)
