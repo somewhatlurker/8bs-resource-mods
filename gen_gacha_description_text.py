@@ -63,6 +63,63 @@ def _gacha_description_banner_text_en(
     banner_text += '\n\n'
     return banner_text
 
+def _gacha_stepup_description_banner_text_ja(
+        limited_gacha_data_dict: dict
+    ) -> str:
+    if limited_gacha_data_dict:
+        banner_text_raw = limited_gacha_data_dict.get('BANNER_TEXT_JA', '').strip()
+        # remove newlines, balancing spaces around ampersands
+        banner_text_raw = banner_text_raw.replace('\n& ', ' & ')
+        banner_text_raw = banner_text_raw.replace(' &\n', ' & ')
+        banner_text_raw = banner_text_raw.replace('\n', '')
+        # remove spaces around ampersands
+        banner_text_raw = banner_text_raw.replace('& ', '&')
+        banner_text_raw = banner_text_raw.replace(' &', '&')
+
+        start_date_text = '<START_MONTH>月<START_DAY>日(<START_WEEKDAY_JA>)00:00'
+        end_date_text = '<END_MONTH>月<END_DAY>日(<END_WEEKDAY_JA>)23:59'
+        banner_text = f'{start_date_text}〜{end_date_text}まで\n'
+        banner_text += f'{banner_text_raw}開催！\n'
+        pickup_text = ''
+        for rarity in ('UR', 'SR', 'R', 'N'):
+            desc_text_key = f'{rarity}_DESC_TEXT_JA'
+            rarity_pickup_text = '\n'.join(limited_gacha_data_dict.get(desc_text_key, ''))
+            if rarity_pickup_text:
+                pickup_text += rarity_pickup_text + '\n'
+        if pickup_text:
+            banner_text += f'\nPICKUP:\n{pickup_text}'
+    else:
+        banner_text = 'ステップアップガチャ開催！\n'
+
+    banner_text += '\n'
+    return banner_text
+
+def _gacha_stepup_description_banner_text_en(
+        limited_gacha_data_dict: dict
+    ) -> str:
+    if limited_gacha_data_dict:
+        banner_text_raw = limited_gacha_data_dict.get('BANNER_TEXT_EN', '').strip()
+        # remove newlines, inserting space at line break
+        banner_text_raw = banner_text_raw.replace('\n', ' ')
+
+        start_date_text = '00:00 <START_MONTH>/<START_DAY> (<START_WEEKDAY_EN>)'
+        end_date_text = '23:59 <END_MONTH>/<END_DAY> (<END_WEEKDAY_EN>)'
+        banner_text = f'During {start_date_text}~{end_date_text},\n'
+        banner_text += f'{banner_text_raw} is being held!\n'
+        pickup_text = ''
+        for rarity in ('UR', 'SR', 'R', 'N'):
+            desc_text_key = f'{rarity}_DESC_TEXT_EN'
+            rarity_pickup_text = '\n'.join(limited_gacha_data_dict.get(desc_text_key, ''))
+            if rarity_pickup_text:
+                pickup_text += rarity_pickup_text + '\n'
+        if pickup_text:
+            banner_text += f'\nPickup cards:\n{pickup_text}'
+    else:
+        banner_text = 'Step-up gacha is being held!\n'
+
+    banner_text += '\n'
+    return banner_text
+
 
 def _gacha_description_odds_text_internal(
         limited_gacha_data_dict: dict,
@@ -122,6 +179,28 @@ def _gacha_description_odds_text_en(
         appearance_rates,
         '<Appearance Rates>',
         '(Limited cards: {lim_percent}%, Permanent cards: {perm_percent}%)'
+    )
+
+def _gacha_stepup_description_odds_text_ja(
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict
+    ):
+    return _gacha_description_odds_text_internal(
+        limited_gacha_data_dict,
+        appearance_rates,
+        '<レアリティ別提供割合>',
+        '(内訳：PICKUP{lim_percent}% 通常{perm_percent}%)'
+    )
+
+def _gacha_stepup_description_odds_text_en(
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict
+    ):
+    return _gacha_description_odds_text_internal(
+        limited_gacha_data_dict,
+        appearance_rates,
+        '<Appearance Rates>',
+        '(Pickup cards: {lim_percent}%, Other cards: {perm_percent}%)'
     )
 
 
@@ -196,8 +275,48 @@ def _gacha_description_contents_text_en(
         'EN',
         '<Gacha Contents>',
         'Limited cards:',
+        'Other cards:'
+    )
+
+def _gacha_stepup_description_contents_text_ja(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict | None,
+        appearance_rates: dict,
+        excluded_series: List[str]
+    ) -> str:
+    text = _gacha_description_contents_text_internal(
+        permanent_gacha_data,
+        limited_gacha_data_dict,
+        appearance_rates,
+        'JA',
+        '<ガチャ内容>',
+        'PICKUP:',
+        '通常:'
+    )
+    if len(excluded_series) > 0:
+        text += '※一部のシリーズは登場されません：'
+        text += '、'.join(excluded_series)
+    return text
+
+def _gacha_stepup_description_contents_text_en(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict | None,
+        appearance_rates: dict,
+        excluded_series: List[str]
+    ) -> str:
+    text = _gacha_description_contents_text_internal(
+        permanent_gacha_data,
+        limited_gacha_data_dict,
+        appearance_rates,
+        'EN',
+        '<Gacha Contents>',
+        'Pickup cards:',
         'Permanent cards:'
     )
+    if len(excluded_series) > 0:
+        text += '※The following series do not appear: '
+        text += ', '.join(excluded_series)
+    return text
 
 
 def gen_gacha_description_text_ja(
@@ -206,7 +325,7 @@ def gen_gacha_description_text_ja(
         appearance_rates: dict,
         sr_guarantee: bool
     ) -> str:
-    """Generate English gacha description text.
+    """Generate Japanese gacha description text.
 
     - permanent_gacha_data is in the format returned by
         gacha_data.load_gacha_data.load_and_parse_gacha_data_csv
@@ -290,4 +409,110 @@ def gen_gacha_description_text_combined(
     text += '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n'
     text += gen_gacha_description_text_en(permanent_gacha_data, limited_gacha_data_dict,
                                           appearance_rates, sr_guarantee)
+    return text
+
+def gen_gacha_stepup_description_text_ja(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict,
+        step_rules: str,
+        excluded_series: List[str]
+    ) -> str:
+    """Generate Japanese step-up gacha description text.
+
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=non-pickup cards data)
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=pickup cards data)
+    - appearance_rates should be a dictionary of str to Decimal, with the following keys:
+        - LIMITED_UR
+        - TOTAL_UR
+        - LIMITED_SR
+        - TOTAL_SR
+        - LIMITED_R
+        - TOTAL_R
+        (values are percentage chance -- e.g. 2.0 == 2.0%, LIMITED means pickup)
+    - excluded_series is a list of series that are excluded (limiting note for contents)
+    - step_rules is a string containing the full step-up rules
+    """
+    banner_text = _gacha_stepup_description_banner_text_ja(limited_gacha_data_dict)
+    odds_text = _gacha_stepup_description_odds_text_ja(limited_gacha_data_dict,
+                                                       appearance_rates)
+    contents_text = _gacha_stepup_description_contents_text_ja(permanent_gacha_data,
+                                                               limited_gacha_data_dict,
+                                                               appearance_rates)
+    footer_text = '・一部のメンバーはカード情報ボタンで初期ステータスを確認できます。\n'
+    footer_text += '・期間限定で出るメンバーは、再度期間限定で登場する場合があります。'
+    return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text
+
+def gen_gacha_stepup_description_text_en(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict,
+        excluded_series: List[str],
+        step_rules: str
+    ) -> str:
+    """Generate English step-up gacha description text.
+
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=non-pickup cards data)
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=pickup cards data)
+    - appearance_rates should be a dictionary of str to Decimal, with the following keys:
+        - LIMITED_UR
+        - TOTAL_UR
+        - LIMITED_SR
+        - TOTAL_SR
+        - LIMITED_R
+        - TOTAL_R
+        (values are percentage chance -- e.g. 2.0 == 2.0%, LIMITED means pickup)
+    - excluded_series is a list of series that are excluded (limiting note for contents)
+    - step_rules is a string containing the full step-up rules
+    """
+    banner_text = _gacha_stepup_description_banner_text_en(limited_gacha_data_dict)
+    odds_text = _gacha_stepup_description_odds_text_en(limited_gacha_data_dict,
+                                                       appearance_rates)
+    contents_text = _gacha_stepup_description_contents_text_en(permanent_gacha_data,
+                                                               limited_gacha_data_dict,
+                                                               appearance_rates)
+    footer_text = '・You can see the initial stats of some cards by tapping the card information button.\n'
+    footer_text += '・Limited cards may be re-released in the future.'
+    return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text
+
+def gen_gacha_stepup_description_text_combined(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict,
+        appearance_rates: dict,
+        excluded_series_ja: List[str],
+        excluded_series_en: List[str],
+        step_rules_ja: str,
+        step_rules_en: str
+    ) -> str:
+    """Generate combined step-up gacha description text (Japanese and English).
+
+    - permanent_gacha_data is in the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=non-pickup cards data)
+    - limited_gacha_data_dict is a single element from the format returned by
+        gacha_data.load_gacha_data.load_and_parse_gacha_data_csv (=pickup cards data)
+    - appearance_rates should be a dictionary of str to Decimal, with the following keys:
+        - LIMITED_UR
+        - TOTAL_UR
+        - LIMITED_SR
+        - TOTAL_SR
+        - LIMITED_R
+        - TOTAL_R
+        (values are percentage chance -- e.g. 2.0 == 2.0%, LIMITED means pickup)
+    - excluded_series is a list of series that are excluded (limiting note for contents)
+    - step_rules is a string containing the full step-up rules
+    """
+    text = 'SCROLL DOWN FOR ENGLISH!\n\n'
+    text += gen_gacha_stepup_description_text_ja(permanent_gacha_data,
+                                                 limited_gacha_data_dict,
+                                                 appearance_rates, excluded_series_ja,
+                                                 step_rules_ja)
+    text += '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n'
+    text += gen_gacha_stepup_description_text_en(permanent_gacha_data,
+                                                 limited_gacha_data_dict,
+                                                 appearance_rates, excluded_series_en,
+                                                 step_rules_en)
     return text

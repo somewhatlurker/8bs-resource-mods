@@ -14,6 +14,8 @@ from PIL import Image
 
 from gacha_data.load_gacha_data import CardDetail
 from gen_gacha_banner_image import gen_gacha_banner_image
+from gen_gacha_description_text import gen_gacha_stepup_description_text_combined
+from gen_gacha_per_table import gen_gacha_stepup_per_table
 
 
 CHARA_NAMES_JA = {
@@ -148,13 +150,13 @@ for chara_id in (7, 4, 5, 3, 2, 8, 6, 10, 11, 12, 1):
         'DESC_JA': (
             f'限定UR「お誕生日 {CHARA_NAMES_SHORT_JA[chara_id]}」登場！\n' +
             f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
-        ) if chara_id in range(1, 8) else (
+        ) if chara_id in range(1, 9) else (
             f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
         ),
         'DESC_EN': (
             f'Limited {CHARA_NAMES_SHORT_EN[chara_id]} birthday UR!\n' +
             f'SR and above are {CHARA_NAMES_SHORT_EN[chara_id]} only!'
-        ) if chara_id in range(1, 8) else (
+        ) if chara_id in range(1, 9) else (
             f'SR and above are {CHARA_NAMES_SHORT_EN[chara_id]} only!'
         ),
         'BG': CHARA_BIRTHDAY_BGS[chara_id],
@@ -271,7 +273,7 @@ STEPUP_DETAIL = [
         # step 5: 11x pull for 250 jewels, 1 SR+ guaranteed, bonus 1x level limit up item
         'STEP': 5,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP5]$1〜11枚目でSR以上1枚確定、上限UPアイテム1つ$At least 1 SR or better card,$Get a level limit increase item',
+        'DESC': '[STEP5]$1〜11枚目でSR以上1枚確定、上限UPアイテム1つ$At least 1 SR or better card,$Get one level limit increase item',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -295,7 +297,7 @@ STEPUP_DETAIL = [
         # step 7: 11x pull for 250 jewels, 1 pickup card guaranteed
         'STEP': 7,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP7]$11枚目にPICKUP衣装確定$Pickup card guaranteed',
+        'DESC': '[STEP7]$11枚目にPICKUP衣装確定$One pickup card guaranteed',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -304,6 +306,24 @@ STEPUP_DETAIL = [
         'MEMO': '11枚目にPICKUPキャラ確定'
     }
 ]
+
+STEPUP_RULES_TEXT_JA = '[STEP1]\n11回ガチャ\n使用コアジュエル:150個\n\n' + \
+    '[STEP2]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目でPICKUP2倍\n\n' + \
+    '[STEP3]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目でSR以上2枚確定\n\n' + \
+    '[STEP4]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目でPICKUP4倍\n\n' + \
+    '[STEP5]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目SR以上1枚確定、\nおまけでレベル上限UPアイテムをランダムで1つGET\n\n' + \
+    '[STEP6]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目SR以上1枚確定、\nおまけでレベル上限UPアイテムをランダムで2つGET\n\n' + \
+    '[STEP7]\n11回ガチャ\n使用コアジュエル：250個\n11枚目にPICKUP衣装確定'
+
+STEPUP_RULES_TEXT_EN = '[STEP1]\n11-times gacha\nCost: 150 core jewels\n\n' + \
+    '[STEP2]\n・11-times gacha\n・Cost: 250 core jewels\n・Pickup card appearance rates x2\n\n' + \
+    '[STEP3]\n・11-times gacha\n・Cost: 250 core jewels\n・At least 2 SR or better cards guaranteed\n\n' + \
+    '[STEP4]\n・11-times gacha\n・Cost: 250 core jewels\n・Pickup card appearance rates x4\n\n' + \
+    '[STEP5]\n・11-times gacha\n・Cost: 250 core jewels\n' + \
+        '・At least 1 SR or better card guaranteed\n・Get one bonus level limit increase item\n\n' + \
+    '[STEP6]\n・11-times gacha\n・Cost: 250 core jewels\n' + \
+        '・At least 1 SR or better card guaranteed\n・Get two bonus level limit increase items\n\n' + \
+    '[STEP7]\n・11-times gacha\n・Cost: 250 core jewels\n・One pickup card guaranteed'
 
 # appearance rates in percent, total is rate including limited and permanent cards
 GACHA_ODDS = {
@@ -435,3 +455,167 @@ def _all_permanent_r_cards(permanent_gacha_data: List[dict]) -> List[CardDetail]
         rows.extend(cards)
     rows = [x for x in rows if x.id not in EXCLUDE_CARDS]
     return rows
+
+
+def _gen_banner_limited_data(master_chara: List[dict], banner: dict) -> dict:
+    data = {
+        'DURATION_DAYS': 5,
+        'START_DATE': banner['DATE'],  # change format because should land on exact date
+        'BANNER_TEXT_JA': f'「{banner["NAME_JA"]}」誕生日ガチャ',
+        'BANNER_TEXT_EN': f'{banner["NAME_EN"]} birthday gacha',
+        'BANNER_BG': banner['BG']
+    }
+
+    charas = banner['CHARAS']
+    if len(charas) == 1 and charas[0] in range(1, 9):
+        data['UR_DESC_TEXT_JA'] = f'【お誕生日】{banner["NAME_SHORT_JA"]}'
+        data['UR_DESC_TEXT_EN'] = f'[Birthday] {banner["NAME_SHORT_EN"]}'
+        data['CARDS'] = _chara_birthday_cards(master_chara, charas[0])
+    else:
+        data['CARDS'] = []  # no limited/pickup cards
+
+    return data
+
+def _gen_banner_other_data(
+        master_chara: List[dict],
+        permanent_gacha_data: List[dict],
+        banner: dict
+    ) -> dict:
+    data = {}
+    cards = []
+    ur_desc_text_ja = f'「{banner["NAME_JA"]}」のUR衣装全部'
+    ur_desc_text_en = f'All {banner["NAME_SHORT_EN"]} UR cards'
+    sr_desc_text_ja = f'「{banner["NAME_JA"]}」のSR衣装全部（イベント衣装込）'
+    sr_desc_text_en = f'All {banner["NAME_SHORT_EN"]} SR cards (including event cards)'
+    r_desc_text_ja = 'プレミアムガチャで登場衣装と同じ'
+    r_desc_text_en = 'All cards in premium gacha'
+
+    charas = banner['CHARAS']
+    for chara_id in charas:
+        bd_cards = _chara_birthday_cards(master_chara, chara_id)
+        sr_ur_cards = _chara_sr_ur_cards(master_chara, chara_id)
+        sr_ur_cards = [c for c in sr_ur_cards if not c in bd_cards]
+        cards.append(sr_ur_cards)
+
+    cards.append(_all_permanent_r_cards(permanent_gacha_data))
+
+    return {
+        'CARDS': cards,
+        'UR_DESC_TEXT_JA': ur_desc_text_ja,
+        'UR_DESC_TEXT_EN': ur_desc_text_en,
+        'SR_DESC_TEXT_JA': sr_desc_text_ja,
+        'SR_DESC_TEXT_EN': sr_desc_text_en,
+        'R_DESC_TEXT_JA': r_desc_text_ja,
+        'R_DESC_TEXT_EN': r_desc_text_en
+    }
+
+
+def _gacha_list_entry(
+        banner_dict: dict,
+        permanent_gacha_data: List[dict],  # note: = non-limited for this banner
+        limited_gacha_data_dict: dict,
+        first_gacha_id: int,
+        master_chara: List[dict],
+        resource_path: str,
+        ver: int
+    ) -> dict:
+    banner_image_cards = limited_gacha_data_dict['CARDS']
+    if len(banner_image_cards) == 0:
+        # use UR cards if no birthday cards
+        banner_image_cards = [c for c in permanent_gacha_data['CARDS'] if c.rarity == 4]
+
+    banner_image = _gen_birthday_gacha_banner_image_ja(banner_dict, banner_image_cards,
+                                                      first_gacha_id, resource_path, ver)
+    banner_image = banner_image.convert('RGB').quantize()
+    # banner_image.save(f'gacha_banners/img_banner{first_gacha_id}.png')
+
+    excluded_series = []
+    charas = banner_dict['CHARAS']
+    for chara_id in charas:
+        excluded_series.append(_chara_exclude_card_names(master_chara, chara_id))
+
+    excluded_series_ja = (x[0] for x in excluded_series)
+    excluded_series_en = (x[1] for x in excluded_series)
+    desc_text = gen_gacha_stepup_description_text_combined(permanent_gacha_data,
+                                                           limited_gacha_data_dict,
+                                                           GACHA_ODDS, excluded_series_ja,
+                                                           excluded_series_en,
+                                                           STEPUP_RULES_TEXT_JA,
+                                                           STEPUP_RULES_TEXT_EN)
+    # with open(f'gacha_banners/banner{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
+    #     f.write(desc_text)
+
+    per_table = gen_gacha_stepup_per_table(permanent_gacha_data, limited_gacha_data_dict,
+                                           GACHA_ODDS)
+    # with open(f'gacha_banners/table{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
+    #     json.dump(per_table, f)
+
+    print(f'Gacha entry generated, id={first_gacha_id}')
+
+    return {
+        'first_gacha_id': first_gacha_id,
+        'banner_image': banner_image,
+        'desc_text': desc_text,
+        'per_table': per_table,
+        'limited_data': limited_gacha_data_dict,
+        'permanent_data': permanent_gacha_data
+    }
+
+def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
+    limited_data = entry.get('limited_data')
+    start_date = limited_data['START_DATE'].replace(year=year)
+    # note: end_date is day *after* end, not day of end
+    end_date = start_date + timedelta(days=limited_data['DURATION_DAYS'])
+
+    desc_text = entry['desc_text'].replace('\n', '$')
+    if start_date:  # useless to check, but looks nice visually
+        desc_text = desc_text.replace('<START_MONTH>', str(start_date.month))
+        desc_text = desc_text.replace('<START_DAY>', str(start_date.day))
+        weekday = start_date.weekday()
+        desc_text = desc_text.replace('<START_WEEKDAY_JA>', WEEKDAYS_JA.get(weekday))
+        desc_text = desc_text.replace('<START_WEEKDAY_EN>', WEEKDAYS_EN.get(weekday))
+    if end_date:
+        # description text says until 11:59 of day before end date in date
+        desc_end_date = end_date - timedelta(days=1)
+        desc_text = desc_text.replace('<END_MONTH>', str(desc_end_date.month))
+        desc_text = desc_text.replace('<END_DAY>', str(desc_end_date.day))
+        weekday = desc_end_date.weekday()
+        desc_text = desc_text.replace('<END_WEEKDAY_JA>', WEEKDAYS_JA.get(weekday))
+        desc_text = desc_text.replace('<END_WEEKDAY_EN>', WEEKDAYS_EN.get(weekday))
+
+    return {
+        'ID': gacha_id,
+        'GACHA_TYPE': 2,  # step-up
+        'NAME': 'ステップアップガチャ',
+        'ORDER': 3,  # seems to be based on type
+        'BANNER': f'img_banner2_{entry["first_gacha_id"]}',
+        'DETAIL': desc_text,
+        'USE_ITEM': 0,
+        'GACHA_1': 0,
+        'GACHA_10': 0,
+        'GACHA_11': 0,
+        'SR_SET': 0,
+        'SHEET': f'gacha_type2_{entry["first_gacha_id"]}',
+        'SHEET_DAILY': 0,
+        'FROM_INSTALL': 0,
+        'START_YEAR': start_date.year,
+        'START_MONTH': start_date.month,
+        'START_DAY': start_date.day,
+        'START_HOUR': 0,
+        'START_MINUTE': 0,
+        'END_YEAR': end_date.year,
+        'END_MONTH': end_date.month,
+        'END_DAY': end_date.day,
+        'END_HOUR': 0,
+        'END_MINUTE': 0
+    }
+
+# TODO: no main body yet... should:
+#   - load necessary JSON from game (master_chara, master_gacha_main, master_series,
+#       master_gacha_type2_X, master_gacha_type2_detail)
+#   - load and verify permanent data from gacha_data
+#   - choose starting gacha ID
+#   - generate limited/other data for each banner, use them to create one entry per banner
+#   - generate master_gacha rows
+#   - generate master_gacha_type2_detail rows
+#   - output to version
