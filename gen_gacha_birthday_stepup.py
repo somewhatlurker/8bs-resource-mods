@@ -4,6 +4,8 @@
 # R rarity includes the same cards as permanent gacha.
 # Birthday cards are used as pickup where available, otherwise all UR cards are.
 
+# TODO: fix using incorrect image specs (change to 960x320, different design)
+
 from datetime import date, timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -159,9 +161,10 @@ for chara_id in (7, 4, 5, 3, 2, 8, 6, 11, 12, 1):
         'NAME_SHORT_JA': CHARA_NAMES_SHORT_JA[chara_id],
         'NAME_SHORT_EN': CHARA_NAMES_SHORT_EN[chara_id],
         'DESC_JA': (
-            f'限定UR「お誕生日 {CHARA_NAMES_SHORT_JA[chara_id]}」登場！\n' +
+            f'STEP7で限定UR「お誕生日 {CHARA_NAMES_SHORT_JA[chara_id]}」確定！\n' +
             f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
         ) if chara_id in range(1, 9) else (
+            f'STEP7で「{CHARA_NAMES_SHORT_JA[chara_id]}」UR確定！\n' +
             f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
         ),
         'DESC_EN': (
@@ -711,7 +714,7 @@ def gen_gacha_birthday_stepup(resource_path, ver):
         io = BytesIO()
         entry['banner_image'].save(io, format='PNG')
         first_id = entry["first_gacha_id"]
-        replacements[f'image/gacha/img_banner2_{first_id}.png'] = io.getvalue()
+        replacements[f'event/gacha/2/img_banner2_{first_id}.png'] = io.getvalue()
     zip_path = path_join(resource_path, str(ver), '1_pkg.zip')
     replace_files_in_zip(zip_path, replacements, if_exists=False)
 
