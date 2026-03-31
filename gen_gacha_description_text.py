@@ -83,7 +83,7 @@ def _gacha_stepup_description_banner_text_ja(
         pickup_text = ''
         for rarity in ('UR', 'SR', 'R', 'N'):
             desc_text_key = f'{rarity}_DESC_TEXT_JA'
-            rarity_pickup_text = '\n'.join(limited_gacha_data_dict.get(desc_text_key, ''))
+            rarity_pickup_text = limited_gacha_data_dict.get(desc_text_key, '')
             if rarity_pickup_text:
                 pickup_text += rarity_pickup_text + '\n'
         if pickup_text:
@@ -109,7 +109,7 @@ def _gacha_stepup_description_banner_text_en(
         pickup_text = ''
         for rarity in ('UR', 'SR', 'R', 'N'):
             desc_text_key = f'{rarity}_DESC_TEXT_EN'
-            rarity_pickup_text = '\n'.join(limited_gacha_data_dict.get(desc_text_key, ''))
+            rarity_pickup_text = limited_gacha_data_dict.get(desc_text_key, '')
             if rarity_pickup_text:
                 pickup_text += rarity_pickup_text + '\n'
         if pickup_text:
@@ -275,7 +275,7 @@ def _gacha_description_contents_text_en(
         'EN',
         '<Gacha Contents>',
         'Limited cards:',
-        'Other cards:'
+        'Permanent cards:'
     )
 
 def _gacha_stepup_description_contents_text_ja(
@@ -296,6 +296,7 @@ def _gacha_stepup_description_contents_text_ja(
     if len(excluded_series) > 0:
         text += '※一部のシリーズは登場されません：'
         text += '、'.join(excluded_series)
+        text += '\n\n'
     return text
 
 def _gacha_stepup_description_contents_text_en(
@@ -311,11 +312,12 @@ def _gacha_stepup_description_contents_text_en(
         'EN',
         '<Gacha Contents>',
         'Pickup cards:',
-        'Permanent cards:'
+        'Other cards:'
     )
     if len(excluded_series) > 0:
         text += '※The following series do not appear: '
         text += ', '.join(excluded_series)
+        text += '\n\n'
     return text
 
 
@@ -415,8 +417,8 @@ def gen_gacha_stepup_description_text_ja(
         permanent_gacha_data: List[dict],
         limited_gacha_data_dict: dict,
         appearance_rates: dict,
-        step_rules: str,
-        excluded_series: List[str]
+        excluded_series: List[str],
+        step_rules: str
     ) -> str:
     """Generate Japanese step-up gacha description text.
 
@@ -440,7 +442,8 @@ def gen_gacha_stepup_description_text_ja(
                                                        appearance_rates)
     contents_text = _gacha_stepup_description_contents_text_ja(permanent_gacha_data,
                                                                limited_gacha_data_dict,
-                                                               appearance_rates)
+                                                               appearance_rates,
+                                                               excluded_series)
     footer_text = '・一部のメンバーはカード情報ボタンで初期ステータスを確認できます。\n'
     footer_text += '・期間限定で出るメンバーは、再度期間限定で登場する場合があります。'
     return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text
@@ -474,7 +477,8 @@ def gen_gacha_stepup_description_text_en(
                                                        appearance_rates)
     contents_text = _gacha_stepup_description_contents_text_en(permanent_gacha_data,
                                                                limited_gacha_data_dict,
-                                                               appearance_rates)
+                                                               appearance_rates,
+                                                               excluded_series)
     footer_text = '・You can see the initial stats of some cards by tapping the card information button.\n'
     footer_text += '・Limited cards may be re-released in the future.'
     return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text

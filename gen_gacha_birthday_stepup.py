@@ -2,21 +2,30 @@
 # The banner contains only the birthday girl's cards for SR and UR rarities
 # (including event cards).
 # R rarity includes the same cards as permanent gacha.
-
-# WORK IN PROGRESS, COMPLETELY NON-FUNCTIONAL AND UNTESTED
+# Birthday cards are used as pickup where available, otherwise all UR cards are.
 
 from datetime import date, timedelta
 from decimal import Decimal
+from io import BytesIO
+import json
+import math
+from os.path import join as path_join
 import random
 from typing import List
 
 from PIL import Image
 
-from gacha_data.load_gacha_data import CardDetail
+from gacha_data.load_gacha_data import CardDetail, load_and_parse_gacha_data_csv, \
+    set_card_names_from_master_chara, set_card_series_from_master_chara, \
+    set_card_gacha_bg_from_master_chara
 from gen_gacha_banner_image import gen_gacha_banner_image
 from gen_gacha_description_text import gen_gacha_stepup_description_text_combined
 from gen_gacha_per_table import gen_gacha_stepup_per_table
+from util import encrypt_replacements_json, read_json_decrypted, \
+                 replace_files_in_ver, replace_files_in_zip
 
+
+PERMANENT_CSV_PATH = 'gacha_data/permanent.csv'
 
 CHARA_NAMES_JA = {
     1: '桜木ひなた',
@@ -140,8 +149,9 @@ BIRTHDAY_BANNERS = [
         'CHARAS': (13, 14, 15)
     }
 ]
-# Add all of 8/pLanet!!, Kanade, and 2_wEi (sorted by birthday)
-for chara_id in (7, 4, 5, 3, 2, 8, 6, 10, 11, 12, 1):
+# Add all of 8/pLanet!!, and 2_wEi (sorted by birthday)
+# No Kanade due to lack of cards
+for chara_id in (7, 4, 5, 3, 2, 8, 6, 11, 12, 1):
     BIRTHDAY_BANNERS.append({
         'DATE': CHARA_BIRTHDAYS[chara_id],
         'NAME_JA': CHARA_NAMES_JA[chara_id], 'NAME_EN': CHARA_NAMES_EN[chara_id],
@@ -181,7 +191,7 @@ EXCLUDE_CARDS = {
     # 187: ('【Halloween】', '[Halloween]'),  # Hinata
     188: ('【Halloween】', '[Halloween]'),  # Mei
     189: ('【Halloween】', '[Halloween]'),  # Hinata
-    210: ('【教官】', '[Professor] Hotaru'),  # Hotaru
+    210: ('【教官】', '[Professor]'),  # Hotaru
     222: ('【なかよし】', '[Close Friends]'),  # Yukina
     226: ('【クリスマス】', '[Christmas]'),  # Hinata
     231: ('【クリスマス】', '[Christmas]'),  # Ayame
@@ -363,13 +373,6 @@ def _gen_birthday_gacha_banner_image_ja(
         resource_path: str,
         ver: int
     ) -> Image.Image:
-    # 'DATE': date(1900, 1, 11),
-    # 'NAME_JA': 'B.A.Cメンバー', 'NAME_EN': 'B.A.C Members\'',
-    # 'NAME_SHORT_JA': 'B.A.C', 'NAME_SHORT_EN': 'B.A.C',
-    # 'DESC_JA': 'SR以上はB.A.Cメンバーのみ出現！',
-    # 'DESC_EN': 'SR and above are B.A.C members only!',
-    # 'BG': 'bg222',
-    # 'CHARAS': (13, 14, 15)
     bg_name = banner_dict['BG']
     description_text = banner_dict['DESC_JA']
 
@@ -495,9 +498,9 @@ def _gen_banner_other_data(
         bd_cards = _chara_birthday_cards(master_chara, chara_id)
         sr_ur_cards = _chara_sr_ur_cards(master_chara, chara_id)
         sr_ur_cards = [c for c in sr_ur_cards if not c in bd_cards]
-        cards.append(sr_ur_cards)
+        cards.extend(sr_ur_cards)
 
-    cards.append(_all_permanent_r_cards(permanent_gacha_data))
+    cards.extend(_all_permanent_r_cards(permanent_gacha_data))
 
     return {
         'CARDS': cards,
@@ -512,41 +515,59 @@ def _gen_banner_other_data(
 
 def _gacha_list_entry(
         banner_dict: dict,
-        permanent_gacha_data: List[dict],  # note: = non-limited for this banner
+        other_gacha_data: dict,  # note: = non-limited for this banner
         limited_gacha_data_dict: dict,
         first_gacha_id: int,
         master_chara: List[dict],
         resource_path: str,
         ver: int
     ) -> dict:
-    banner_image_cards = limited_gacha_data_dict['CARDS']
-    if len(banner_image_cards) == 0:
-        # use UR cards if no birthday cards
-        banner_image_cards = [c for c in permanent_gacha_data['CARDS'] if c.rarity == 4]
+    # use all of chara's UR cards as pickup if no pickup set (no birthday cards)
+    appearance_rates = GACHA_ODDS.copy()
+    limited_cards = limited_gacha_data_dict['CARDS']
+    if len(limited_cards) == 0:
+        limited_gacha_data_dict = limited_gacha_data_dict.copy()
+        other_gacha_data = other_gacha_data.copy()
+        other_cards = other_gacha_data['CARDS']
 
-    banner_image = _gen_birthday_gacha_banner_image_ja(banner_dict, banner_image_cards,
-                                                      first_gacha_id, resource_path, ver)
+        limited_cards = [c for c in other_cards if c.rarity == 4]
+        other_cards = [c for c in other_cards if c.rarity != 4]
+
+        limited_gacha_data_dict['CARDS'] = limited_cards
+        other_gacha_data['CARDS'] = other_cards
+        # need to adjust UR appearance rates to make LIMITED_UR == TOTAL_UR now
+        appearance_rates['LIMITED_UR'] = appearance_rates['TOTAL_UR']
+
+        # update description text
+        limited_gacha_data_dict['UR_DESC_TEXT_JA'] = f'「{banner_dict["NAME_JA"]}」のUR衣装全部'
+        limited_gacha_data_dict['UR_DESC_TEXT_EN'] = f'All {banner_dict["NAME_SHORT_EN"]} UR cards'
+        other_gacha_data['UR_DESC_TEXT_JA'] = 'なし'
+        other_gacha_data['UR_DESC_TEXT_EN'] = 'None'
+
+    banner_image = _gen_birthday_gacha_banner_image_ja(banner_dict, limited_cards,
+                                                       first_gacha_id, resource_path, ver)
     banner_image = banner_image.convert('RGB').quantize()
-    # banner_image.save(f'gacha_banners/img_banner{first_gacha_id}.png')
+    # banner_image.save(f'gacha_banners/img_banner2_{first_gacha_id}.png')
 
     excluded_series = []
     charas = banner_dict['CHARAS']
     for chara_id in charas:
-        excluded_series.append(_chara_exclude_card_names(master_chara, chara_id))
+        excluded_series.extend(_chara_exclude_card_names(master_chara, chara_id))
 
-    excluded_series_ja = (x[0] for x in excluded_series)
-    excluded_series_en = (x[1] for x in excluded_series)
-    desc_text = gen_gacha_stepup_description_text_combined(permanent_gacha_data,
+    excluded_series_ja = list((x[0] for x in excluded_series if x))
+    excluded_series_en = list((x[1] for x in excluded_series if x))
+    desc_text = gen_gacha_stepup_description_text_combined([other_gacha_data],
                                                            limited_gacha_data_dict,
-                                                           GACHA_ODDS, excluded_series_ja,
+                                                           appearance_rates,
+                                                           excluded_series_ja,
                                                            excluded_series_en,
                                                            STEPUP_RULES_TEXT_JA,
                                                            STEPUP_RULES_TEXT_EN)
     # with open(f'gacha_banners/banner{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
     #     f.write(desc_text)
 
-    per_table = gen_gacha_stepup_per_table(permanent_gacha_data, limited_gacha_data_dict,
-                                           GACHA_ODDS)
+    per_table = gen_gacha_stepup_per_table([other_gacha_data], limited_gacha_data_dict,
+                                           appearance_rates)
     # with open(f'gacha_banners/table{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
     #     json.dump(per_table, f)
 
@@ -558,7 +579,7 @@ def _gacha_list_entry(
         'desc_text': desc_text,
         'per_table': per_table,
         'limited_data': limited_gacha_data_dict,
-        'permanent_data': permanent_gacha_data
+        'other_data': other_gacha_data
     }
 
 def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
@@ -610,12 +631,95 @@ def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
         'END_MINUTE': 0
     }
 
-# TODO: no main body yet... should:
-#   - load necessary JSON from game (master_chara, master_gacha_main, master_series,
-#       master_gacha_type2_X, master_gacha_type2_detail)
-#   - load and verify permanent data from gacha_data
-#   - choose starting gacha ID
-#   - generate limited/other data for each banner, use them to create one entry per banner
-#   - generate master_gacha rows
-#   - generate master_gacha_type2_detail rows
-#   - output to version
+
+def gen_gacha_birthday_stepup(resource_path, ver):
+    master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
+    master_chara = json.loads(master_chara)
+    master_series = read_json_decrypted(resource_path, ver, 'json/master_series.json')
+    master_series = json.loads(master_series)
+    master_gacha_main = read_json_decrypted(resource_path, ver, 'json/master_gacha_main.json')
+    master_gacha_main = json.loads(master_gacha_main)
+    master_gacha_type2_1 = read_json_decrypted(resource_path, ver, 'json/master_gacha_type2_1.json')
+    master_gacha_type2_1 = json.loads(master_gacha_type2_1)
+    master_gacha_type2_detail = read_json_decrypted(resource_path, ver, 'json/master_gacha_type2_detail.json')
+    master_gacha_type2_detail = json.loads(master_gacha_type2_detail)
+
+    permanent_gacha_data = load_and_parse_gacha_data_csv(PERMANENT_CSV_PATH)
+    set_card_names_from_master_chara(permanent_gacha_data, master_chara)
+    set_card_series_from_master_chara(permanent_gacha_data, master_chara)
+    set_card_gacha_bg_from_master_chara(permanent_gacha_data, master_chara)
+
+    # don't bother verifying the permanent_gacha_data
+    # -- assume it's fine from doing the regular gacha rotation
+
+    gacha_id = max([row['ID'] for row in master_gacha_main[1:]]) + 1
+    # go up to next multiple of 1000, so it's neat
+    gacha_id = math.ceil(gacha_id / 1000) * 1000
+    first_gacha_id = gacha_id  # first occurence of each entry
+
+    stepup_gacha_unique_entires = []
+    for banner in BIRTHDAY_BANNERS:
+        limited_data = _gen_banner_limited_data(master_chara, banner)
+        other_data = _gen_banner_other_data(master_chara, permanent_gacha_data, banner)
+        entry = _gacha_list_entry(banner, other_data, limited_data, first_gacha_id,
+                                  master_chara, resource_path, ver)
+        stepup_gacha_unique_entires.append(entry)
+        first_gacha_id += 1
+
+    # print(stepup_gacha_unique_entires)
+
+    master_gacha_rows = []
+    for year in range(2025, 2038):
+        for entry in stepup_gacha_unique_entires:
+            master_gacha_rows.append(_master_gacha_row(entry, gacha_id, year))
+            gacha_id += 1
+
+    # print(master_gacha_rows)
+
+    # add gacha detail sheets
+    replacements = {}
+    for entry in stepup_gacha_unique_entires:
+        header_row = master_gacha_type2_1[0]
+        full_table = [header_row] + entry['per_table']
+        first_id = entry["first_gacha_id"]
+        replacements[f'json/master_gacha_type2_{first_id}.json'] = json.dumps(full_table)
+    replacements = encrypt_replacements_json(replacements)
+    zip_path = path_join(resource_path, str(ver), '1_json01.zip')
+    # replace_files_in_zip(zip_path, replacements, if_exists=False)
+
+    # add step details
+    for row in master_gacha_rows:
+        gacha_id = row['ID']
+        detail_rows = [{'ID': gacha_id} | x for x in STEPUP_DETAIL]
+        master_gacha_type2_detail.extend(detail_rows)
+    replacements = encrypt_replacements_json({
+        'json/master_gacha_type2_detail.json': json.dumps(master_gacha_type2_detail)
+    })
+    # replace_files_in_ver(resource_path, ver, replacements)
+
+    # merge and replace master_gacha_main
+    master_gacha_main.extend(master_gacha_rows)
+    replacements = encrypt_replacements_json({
+        'json/master_gacha_main.json': json.dumps(master_gacha_main)
+    })
+    # replace_files_in_ver(resource_path, ver, replacements)
+
+    # add images
+    replacements = {}
+    for entry in stepup_gacha_unique_entires:
+        io = BytesIO()
+        entry['banner_image'].save(io, format='PNG')
+        first_id = entry["first_gacha_id"]
+        replacements[f'image/gacha/img_banner2_{first_id}.png'] = io.getvalue()
+    zip_path = path_join(resource_path, str(ver), '1_pkg.zip')
+    # replace_files_in_zip(zip_path, replacements, if_exists=False)
+
+if __name__ == '__main__':
+    from sys import argv
+
+    if len(argv) != 3:
+        print('Usage: python gen_gacha_birthday_stepup.py <resource_path> <ver>')
+        print('Example: python gen_gacha_rotation.py res 733')
+        exit()
+
+    gen_gacha_birthday_stepup(argv[1], int(argv[2]))
