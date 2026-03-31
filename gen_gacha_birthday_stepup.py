@@ -714,7 +714,7 @@ def gen_gacha_birthday_stepup(resource_path, ver):
         io = BytesIO()
         entry['banner_image'].save(io, format='PNG')
         first_id = entry["first_gacha_id"]
-        replacements[f'event/gacha/2/img_banner2_{first_id}.png'] = io.getvalue()
+        replacements[f'image/event/gacha/2/img_banner2_{first_id}.png'] = io.getvalue()
     zip_path = path_join(resource_path, str(ver), '1_pkg.zip')
     replace_files_in_zip(zip_path, replacements, if_exists=False)
 
