@@ -1,6 +1,6 @@
 from typing import List
 
-from gacha_data.load_gacha_data import RARITY_NAME_TO_ID
+from .gacha_data.load_gacha_data import RARITY_NAME_TO_ID
 
 PERMANENT_DESCRIPTION_BANNER_TEXT_JA = '「ステージ」「Anniversary」「ナイトメア」「B.A.C」などが登場!!'
 PERMANENT_DESCRIPTION_BANNER_TEXT_EN = '[Stage] [Anniversary] [Nightmare] [B.A.C] and more are available!!'

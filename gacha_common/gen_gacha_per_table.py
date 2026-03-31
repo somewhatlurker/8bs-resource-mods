@@ -4,7 +4,7 @@ import math
 import random
 from typing import List, Tuple
 
-from gacha_data.load_gacha_data import RARITY_ID_TO_NAME
+from .gacha_data.load_gacha_data import RARITY_ID_TO_NAME
 
 
 # note: game seems to use 32 bit math to do pulls (signed in some places),

@@ -17,18 +17,19 @@ from typing import Dict, List
 
 from PIL import Image
 
-from gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
+from gacha_common.gacha_data.load_gacha_data import load_and_parse_gacha_data_csv, \
     set_card_names_from_master_chara, set_card_series_from_master_chara, \
     set_card_gacha_bg_from_master_chara, verify_gacha_data
-from gen_gacha_banner_image import gen_gacha_banner_image
-from gen_gacha_description_text import gen_gacha_description_text_combined
-from gen_gacha_per_table import gen_gacha_per_table
+from gacha_common.gen_gacha_banner_image import gen_gacha_banner_image
+from gacha_common.gen_gacha_description_text import \
+    gen_gacha_description_text_combined
+from gacha_common.gen_gacha_per_table import gen_gacha_per_table
 from util import encrypt_replacements_json, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
 
 
-LIMITED_CSV_PATH = 'gacha_data/limited_rotation.csv'
-PERMANENT_CSV_PATH = 'gacha_data/permanent.csv'
+LIMITED_CSV_PATH = 'gacha_common/gacha_data/limited_rotation.csv'
+PERMANENT_CSV_PATH = 'gacha_common/gacha_data/permanent.csv'
 
 # appearance rates in percent, total is rate including limited and permanent cards
 GACHA_ODDS = {

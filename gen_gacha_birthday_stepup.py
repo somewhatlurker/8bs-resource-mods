@@ -15,17 +15,18 @@ from typing import List
 
 from PIL import Image
 
-from gacha_data.load_gacha_data import CardDetail, load_and_parse_gacha_data_csv, \
-    set_card_names_from_master_chara, set_card_series_from_master_chara, \
-    set_card_gacha_bg_from_master_chara
-from gen_gacha_banner_image import gen_gacha_banner_image
-from gen_gacha_description_text import gen_gacha_stepup_description_text_combined
-from gen_gacha_per_table import gen_gacha_stepup_per_table
+from gacha_common.gacha_data.load_gacha_data import CardDetail, \
+    load_and_parse_gacha_data_csv, set_card_names_from_master_chara, \
+    set_card_series_from_master_chara, set_card_gacha_bg_from_master_chara
+from gacha_common.gen_gacha_banner_image import gen_gacha_banner_image
+from gacha_common.gen_gacha_description_text import \
+    gen_gacha_stepup_description_text_combined
+from gacha_common.gen_gacha_per_table import gen_gacha_stepup_per_table
 from util import encrypt_replacements_json, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
 
 
-PERMANENT_CSV_PATH = 'gacha_data/permanent.csv'
+PERMANENT_CSV_PATH = 'gacha_common/gacha_data/permanent.csv'
 
 CHARA_NAMES_JA = {
     1: '桜木ひなた',
