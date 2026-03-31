@@ -686,7 +686,7 @@ def gen_gacha_birthday_stepup(resource_path, ver):
         replacements[f'json/master_gacha_type2_{first_id}.json'] = json.dumps(full_table)
     replacements = encrypt_replacements_json(replacements)
     zip_path = path_join(resource_path, str(ver), '1_json01.zip')
-    # replace_files_in_zip(zip_path, replacements, if_exists=False)
+    replace_files_in_zip(zip_path, replacements, if_exists=False)
 
     # add step details
     for row in master_gacha_rows:
@@ -696,14 +696,14 @@ def gen_gacha_birthday_stepup(resource_path, ver):
     replacements = encrypt_replacements_json({
         'json/master_gacha_type2_detail.json': json.dumps(master_gacha_type2_detail)
     })
-    # replace_files_in_ver(resource_path, ver, replacements)
+    replace_files_in_ver(resource_path, ver, replacements)
 
     # merge and replace master_gacha_main
     master_gacha_main.extend(master_gacha_rows)
     replacements = encrypt_replacements_json({
         'json/master_gacha_main.json': json.dumps(master_gacha_main)
     })
-    # replace_files_in_ver(resource_path, ver, replacements)
+    replace_files_in_ver(resource_path, ver, replacements)
 
     # add images
     replacements = {}
@@ -713,7 +713,7 @@ def gen_gacha_birthday_stepup(resource_path, ver):
         first_id = entry["first_gacha_id"]
         replacements[f'image/gacha/img_banner2_{first_id}.png'] = io.getvalue()
     zip_path = path_join(resource_path, str(ver), '1_pkg.zip')
-    # replace_files_in_zip(zip_path, replacements, if_exists=False)
+    replace_files_in_zip(zip_path, replacements, if_exists=False)
 
 if __name__ == '__main__':
     from sys import argv
