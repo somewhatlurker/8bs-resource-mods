@@ -245,7 +245,7 @@ def _gacha_list_entry(
     ) -> dict:
     banner_image = _gen_limited_gacha_banner_image_ja(limited_gacha_data_dict,
                                                       first_gacha_id, resource_path, ver)
-    banner_image = banner_image.convert('RGB').quantize()
+    banner_image = banner_image.quantize()
     # banner_image.save(f'gacha_banners/img_banner{first_gacha_id}.png')
 
     desc_text = gen_gacha_description_text_combined(permanent_gacha_data,

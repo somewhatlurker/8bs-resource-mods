@@ -5,12 +5,16 @@ import random
 from typing import List
 
 import colorgram
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from util import read_file
 
 
 DEFAULT_BANNER_BG = 'bg_live_1'
+
+# original game is 478x98, y=18, but we can push height up a bit
+BANNER_BG_SIZE = (478, 104)
+BANNER_BG_Y = 11
 
 BANNER_TITLE_FONT_PATH = 'fonts/BIZ_UDPMincho/BIZUDPMincho-Bold.ttf'
 BANNER_DESC_FONT_PATH = 'fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-SemiBold.ttf'
@@ -100,7 +104,11 @@ def _gen_gacha_title_text_image(title, outline_colour) -> Image.Image:
     title parameter sets "プレミアム" part only
     """
     title_bbox = BANNER_LARGE_FONT.getbbox(title)
+    title_metrics = BANNER_LARGE_FONT.getmetrics()
+    title_ascent = title_metrics[0]
     gacha_bbox = BANNER_MEDIUM_FONT.getbbox('ガチャ')
+    gacha_metrics = BANNER_MEDIUM_FONT.getmetrics()
+    gacha_ascent = gacha_metrics[0]
 
     text_margin = math.ceil(BANNER_TITLE_TOTAL_STROKE_WIDTH)
     title_pos = (
@@ -109,11 +117,11 @@ def _gen_gacha_title_text_image(title, outline_colour) -> Image.Image:
     )
     gacha_pos = (
         title_pos[0] + title_bbox[2] + int(text_margin * 1.5),
-        title_pos[1] + title_bbox[3] - gacha_bbox[3]
+        title_pos[1] + title_ascent - gacha_ascent
     )
     image_size = (
         gacha_pos[0] + gacha_bbox[2] + text_margin,
-        gacha_pos[1] + gacha_bbox[3] + text_margin
+        max(title_pos[1] + title_bbox[3], gacha_pos[1] + gacha_bbox[3]) + text_margin
     )
 
     # start by creating strokes for text
@@ -243,8 +251,8 @@ def _gen_banner_desc_text_image(text, bg_colour, outline_colour) -> Image.Image:
     return image
 
 
-def _load_500x120_bg_image(bg_io):
-    """Load, crop, and resize bg image to 500x120 resolution RGBA.
+def _load_bg_image(bg_io):
+    """Load, crop, and resize bg image to BANNER_BG_SIZE resolution RGBA.
 
     Input is a file-like IO object.
     """
@@ -252,19 +260,22 @@ def _load_500x120_bg_image(bg_io):
     # convert to RGBA because input may be indexed colour
     image = image.convert('RGBA')
 
-    # crop to correct aspect ratio (same as 500x120 image)
+    w = BANNER_BG_SIZE[0]
+    h = BANNER_BG_SIZE[1]
+
+    # crop to correct aspect ratio (same as output)
     crop_width = image.width
-    crop_height = int(image.width * (120 / 500))
+    crop_height = int(image.width * (h / w))
     if (crop_height > image.height):
-        crop_width = int(image.height * (500 / 120))
+        crop_width = int(image.height * (w / h))
         crop_height = image.height
     crop_left = (image.width - crop_width) // 2
     crop_upper = (image.height - crop_height) // 2
     image = image.crop(
         (crop_left, crop_upper, crop_left + crop_width, crop_upper + crop_height)
     )
-    # resize to 500x120
-    image = image.resize((500, 120))
+    # resize
+    image = image.resize((w, h))
 
     return image
 
@@ -365,23 +376,56 @@ def gen_gacha_banner_image(
         resource_path: str,
         ver: int
     ) -> Image.Image:
+    banner_image = Image.new('RGBA', (500, 120), (0, 0, 0, 0))
+
     if not bg_name:
         bg_name = DEFAULT_BANNER_BG
     # separate on slash character, used to denote multiple backgrounds
     bg_names = bg_name.split('/')
 
     bg_bytes = read_file(resource_path, ver, f'image/bg/{bg_names[0]}.png')
-    banner_image = _load_500x120_bg_image(BytesIO(bg_bytes))
-
+    bg_image = _load_bg_image(BytesIO(bg_bytes))
     # if there's multiple backgrounds, paste them over, left-to-right
     for i, bg_name in enumerate(bg_names[1:]):
         split_bytes = read_file(resource_path, ver, f'image/bg/{bg_name}.png')
-        split_image = _load_500x120_bg_image(BytesIO(split_bytes))
-        split_mask = _split_bg_image_mask((500, 120), i + 1 / len(bg_names), 20)
-        banner_image.paste(split_image, mask=split_mask)
+        split_image = _load_bg_image(BytesIO(split_bytes))
+        split_mask = _split_bg_image_mask((bg_image.width, bg_image.height),
+                                          i + 1 / len(bg_names), 20)
+        bg_image.paste(split_image, mask=split_mask)
+
+    # make a copy of bg with reduced opacity, blur it a lot, paste to banner,
+    # and blur again to blend the edges
+    bg_blur_image = bg_image.resize((bg_image.width + 12, bg_image.height + 12))
+    bg_blur_image.putalpha(127)
+    bg_blur_image = bg_blur_image.filter(ImageFilter.GaussianBlur(24))
+    # fill surrounding pixels with correct colour by pasting with 0 alpha before cropping
+    # (or else edges turn dark)
+    banner_image.paste(
+        bg_blur_image,
+        box=(
+            (banner_image.width - bg_blur_image.width) // 2,
+            BANNER_BG_Y - (bg_blur_image.height - bg_image.height) // 2
+        )
+    )
+    banner_image.putalpha(0)
+    bg_blur_image = bg_blur_image.crop(
+        (2, 2, bg_blur_image.width - 4, bg_blur_image.height - 4))
+    banner_image.paste(
+        bg_blur_image,
+        box=(
+            (banner_image.width - bg_blur_image.width) // 2,
+            BANNER_BG_Y - (bg_blur_image.height - bg_image.height) // 2
+        )
+    )
+    banner_image = banner_image.filter(ImageFilter.GaussianBlur(2))
+    # then paste the actual bg too
+    banner_image.paste(
+        bg_image,
+        box=((banner_image.width - bg_image.width) // 2, BANNER_BG_Y)
+    )
 
     # extract dominant colours (colorgram.py)
-    dominant_colours = colorgram.extract(banner_image, 4)
+    dominant_colours = colorgram.extract(bg_image, 4)
     darkest_dominant_colour = dominant_colours[0]
     lightest_dominant_colour = dominant_colours[0]
     saturated_dominant_colour = dominant_colours[0]
@@ -430,6 +474,8 @@ def gen_gacha_banner_image(
     else:
         text_x_offset = 0
 
+    cards_image = Image.new('RGBA', (BANNER_BG_SIZE[0], BANNER_BG_SIZE[1] + BANNER_BG_Y),
+                            (0, 0, 0, 0))
     card_image_pos = []
     if len(card_images) >= 1:
         if len(card_images) < 3:
@@ -438,26 +484,20 @@ def gen_gacha_banner_image(
             card_image_pos.append((-card_images[0].width // 6, 0))
     if len(card_images) >= 2:
         if len(card_images) < 3:
-            card_image_pos.append((banner_image.width - card_images[1].width, 0))
+            card_image_pos.append((cards_image.width - card_images[1].width, 0))
         else:
-            card_image_pos.append((banner_image.width - card_images[1].width * 5 // 6, 0))
+            card_image_pos.append((cards_image.width - card_images[1].width * 5 // 6, 0))
     if len(card_images) >= 3:
         card_image_pos.append((card_images[2].width // 2, 0))
     if len(card_images) >= 4:
-        card_image_pos.append((banner_image.width - card_images[3].width * 3 // 2, 0))
+        card_image_pos.append((cards_image.width - card_images[3].width * 3 // 2, 0))
 
     for i in range(len(card_image_pos)-1, -1, -1):
-        banner_image.alpha_composite(card_images[i], card_image_pos[i])
-
-    # add title text
-    title_text = _gen_gacha_title_text_image(title_text,
-                                             saturated_dominant_colour.rgb + (220,))
-    title_text_left = (banner_image.width - title_text.width) // 2 + text_x_offset
-    if description_text:
-        title_text_upper = (banner_image.height - title_text.height) * 5 // 6
-    else:
-        title_text_upper = (banner_image.height - title_text.height) * 4 // 6
-    banner_image.alpha_composite(title_text, (title_text_left, title_text_upper))
+        cards_image.alpha_composite(card_images[i], card_image_pos[i])
+    banner_image.alpha_composite(
+        cards_image,
+        ((banner_image.width - cards_image.width) // 2, 0)
+    )
 
     # add banner text
     if description_text:
@@ -465,7 +505,17 @@ def gen_gacha_banner_image(
                                                 lightest_dominant_colour.rgb + (220,),
                                                 darkest_dominant_colour.rgb + (255,))
         desc_text_left = (banner_image.width - desc_text.width) // 2 + text_x_offset
-        desc_text_upper = (banner_image.height - desc_text.height) * 1 // 6
+        desc_text_upper = BANNER_BG_Y + (BANNER_BG_SIZE[1] - desc_text.height) * 1 // 8
         banner_image.alpha_composite(desc_text, (desc_text_left, desc_text_upper))
 
-    return banner_image
+    # add title text
+    title_text = _gen_gacha_title_text_image(title_text,
+                                             saturated_dominant_colour.rgb + (220,))
+    title_text_left = (banner_image.width - title_text.width) // 2 + text_x_offset
+    if description_text:
+        title_text_upper = BANNER_BG_Y + (BANNER_BG_SIZE[1] - title_text.height) * 7 // 8
+    else:
+        title_text_upper = BANNER_BG_Y + (BANNER_BG_SIZE[1] - title_text.height) * 4 // 6
+    banner_image.alpha_composite(title_text, (title_text_left, title_text_upper))
+
+    return banner_image.convert('RGBA')
