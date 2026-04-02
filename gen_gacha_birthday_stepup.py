@@ -4,8 +4,6 @@
 # R rarity includes the same cards as permanent gacha.
 # Birthday cards are used as pickup where available, otherwise all UR cards are.
 
-# TODO: fix using incorrect image specs (change to 960x320, different design)
-
 from datetime import date, timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -20,7 +18,7 @@ from PIL import Image
 from gacha_common.gacha_data.load_gacha_data import CardDetail, \
     load_and_parse_gacha_data_csv, set_card_names_from_master_chara, \
     set_card_series_from_master_chara, set_card_gacha_bg_from_master_chara
-from gacha_common.gen_gacha_banner_image import gen_gacha_banner_image
+from gacha_common.gen_stepup_gacha_banner_image import gen_stepup_gacha_banner_image
 from gacha_common.gen_gacha_description_text import \
     gen_gacha_stepup_description_text_combined
 from gacha_common.gen_gacha_per_table import gen_gacha_stepup_per_table
@@ -383,10 +381,10 @@ def _gen_birthday_gacha_banner_image_ja(
     is_single_chara_banner = len(set([c.chara for c in image_cards])) == 1
 
     # randomly select up to four cards if multiple characters (max of one per character),
-    # or two cards if single character
+    # or three cards if single character
     shuffled_image_cards = []
     rd = random.Random(output_gacha_id)
-    for _ in range(2 if is_single_chara_banner else 4):
+    for _ in range(3 if is_single_chara_banner else 4):
         if len(image_cards) == 0: break
         idx = rd.randrange(len(image_cards))
         card = image_cards[idx]
@@ -398,10 +396,10 @@ def _gen_birthday_gacha_banner_image_ja(
             # remove all cards with same chara ID to prevent them from being chosen
             image_cards = [c for c in image_cards if c.chara != card.chara]
 
-    return gen_gacha_banner_image(
+    return gen_stepup_gacha_banner_image(
         bg_name,
         [f'image/chara/stand/stand_chara{id}_2.png' for id in shuffled_image_cards],
-        'Birthday',
+        'Birthdayステップアップガチャ',
         description_text,
         resource_path,
         ver
@@ -550,7 +548,7 @@ def _gacha_list_entry(
 
     banner_image = _gen_birthday_gacha_banner_image_ja(banner_dict, limited_cards,
                                                        first_gacha_id, resource_path, ver)
-    banner_image = banner_image.convert('RGB').quantize()
+    banner_image = banner_image.quantize()
     # banner_image.save(f'gacha_banners/img_banner2_{first_gacha_id}.png')
 
     excluded_series = []
