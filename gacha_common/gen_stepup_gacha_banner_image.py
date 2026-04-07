@@ -21,7 +21,7 @@ BANNER_DESC_FONT_PATH = 'fonts/IBM_Plex_Sans_JP/IBMPlexSansJP-SemiBold.ttf'
 BANNER_TITLE_FONT = ImageFont.truetype(BANNER_TITLE_FONT_PATH, 72)
 BANNER_DESC_FONT = ImageFont.truetype(BANNER_DESC_FONT_PATH, 36)
 
-BANNER_TITLE_COLOUR = (255, 242, 170, 255)
+BANNER_TITLE_COLOUR = (254, 244, 177, 255)
 BANNER_TITLE_INNER_STROKE_COLOUR = (205, 50, 100, 255)
 BANNER_TITLE_INNER_STROKE_WIDTH = 5
 BANNER_TITLE_SHADOW_OFFSET = 5
@@ -30,10 +30,15 @@ BANNER_TITLE_OUTER_STROKE_WIDTH = 6
 BANNER_TITLE_TOTAL_STROKE_WIDTH = BANNER_TITLE_INNER_STROKE_WIDTH + BANNER_TITLE_OUTER_STROKE_WIDTH
 BANNER_TITLE_SCALE_FACTOR = 2.2
 
-BANNER_DESCRIPTION_BG_COLOUR = (245, 71, 150, 127)
+BANNER_DESCRIPTION_BG_COLOUR = (245, 71, 150, 160)
+BANNER_DESCRIPTION_BG_STROKE_COLOUR = (24, 8, 8, 160)
+BANNER_DESCRIPTION_BG_STROKE_WIDTH = 2
+BANNER_DESCRIPTION_BG_RADIUS = 6
 BANNER_DESCRIPTION_TEXT_COLOUR = (250, 250, 0, 255)
 BANNER_DESCRIPTION_TEXT_STROKE_COLOUR = (140, 0, 160, 255)
 BANNER_DESCRIPTION_TEXT_STROKE_WIDTH = 4
+BANNER_DESCRIPTION_TEXT_SHADOW_OFFSET = 4
+BANNER_DESCRIPTION_TEXT_SHADOW_COLOUR = (0, 0, 0, 127)
 BANNER_DESCRIPTION_SPACE_QUOTES = False
 
 
@@ -95,7 +100,11 @@ def _gen_gacha_title_text_image(title, shadow_colour) -> Image.Image:
         fill=BANNER_TITLE_COLOUR
     )
 
-    # TODO: rotate
+    # rotate the image
+    max_angle = math.degrees(math.asin(50 / image.width))
+    angle = min(3.3, max_angle)
+    image = image.rotate(angle, Image.Resampling.BILINEAR, expand=True)
+
     return image.resize((
         int(image.width / BANNER_TITLE_SCALE_FACTOR),
         int(image.height / BANNER_TITLE_SCALE_FACTOR)
@@ -103,7 +112,8 @@ def _gen_gacha_title_text_image(title, shadow_colour) -> Image.Image:
 
 def _gen_banner_desc_text_image(text) -> Image.Image:
     """Create Image of banner description text with stroke and background."""
-    text_margin = math.ceil(BANNER_DESCRIPTION_TEXT_STROKE_WIDTH) + 4
+    text_margin = math.ceil(BANNER_DESCRIPTION_BG_STROKE_WIDTH) + \
+                  math.ceil(BANNER_DESCRIPTION_TEXT_STROKE_WIDTH) + 5
 
     if BANNER_DESCRIPTION_SPACE_QUOTES:
         # hacky fix to make some proportional fonts look better
@@ -133,10 +143,28 @@ def _gen_banner_desc_text_image(text) -> Image.Image:
     image_size[1] = math.ceil(image_size[1])
 
     # start by creating the background
-    image = Image.new('RGBA', image_size, BANNER_DESCRIPTION_BG_COLOUR)
-    # TODO: rounded corners, stroke
-    # then text stroke
+    image = Image.new('RGBA', image_size, (0, 0, 0, 0))
     d = ImageDraw.Draw(image)
+    d.rounded_rectangle(
+        ((0, 0), (image_size[0] - 1, image_size[1] - 1)),
+        radius=BANNER_DESCRIPTION_BG_RADIUS,
+        fill=BANNER_DESCRIPTION_BG_COLOUR,
+        outline=BANNER_DESCRIPTION_BG_STROKE_COLOUR,
+        width=BANNER_DESCRIPTION_BG_STROKE_WIDTH
+    )
+    # then text shadow
+    d.text(
+        (
+            text_pos[0] + BANNER_DESCRIPTION_TEXT_SHADOW_OFFSET,
+            text_pos[1] + BANNER_DESCRIPTION_TEXT_SHADOW_OFFSET
+        ),
+        text,
+        font=BANNER_DESC_FONT,
+        fill=BANNER_DESCRIPTION_TEXT_SHADOW_COLOUR,
+        spacing=BANNER_DESCRIPTION_TEXT_STROKE_WIDTH*2,
+        align='right'
+    )
+    # then text stroke
     d.text(
         text_pos,
         text,
@@ -145,7 +173,7 @@ def _gen_banner_desc_text_image(text) -> Image.Image:
         stroke_fill=BANNER_DESCRIPTION_TEXT_STROKE_COLOUR,
         stroke_width=BANNER_DESCRIPTION_TEXT_STROKE_WIDTH,
         spacing=0,
-        align='center'
+        align='right'
     )
     # and finally the main text
     d.text(
@@ -154,7 +182,7 @@ def _gen_banner_desc_text_image(text) -> Image.Image:
         font=BANNER_DESC_FONT,
         fill=BANNER_DESCRIPTION_TEXT_COLOUR,
         spacing=BANNER_DESCRIPTION_TEXT_STROKE_WIDTH*2,
-        align='center'
+        align='right'
     )
 
     return image
@@ -314,8 +342,8 @@ def gen_stepup_gacha_banner_image(
         if colour.hsl.s > saturated_dominant_colour.hsl.s:
             saturated_dominant_colour = colour
     # ensure colours is distinct enough by clamping to safe-ish ranges
-    saturated_dominant_colour = _clamp_colour_lightness(saturated_dominant_colour, 100, 191)
-    saturated_dominant_colour = _clamp_colour_sat(saturated_dominant_colour, 127, 255)
+    saturated_dominant_colour = _clamp_colour_lightness(saturated_dominant_colour, 100, 160)
+    saturated_dominant_colour = _clamp_colour_sat(saturated_dominant_colour, 160, 255)
 
     # load and resize card images
     card_image_bytes = [read_file(resource_path, ver, f) for f in card_image_files]
@@ -348,8 +376,8 @@ def gen_stepup_gacha_banner_image(
     # add banner text
     if description_text:
         desc_text = _gen_banner_desc_text_image(description_text)
-        desc_text_left = banner_image.width - desc_text.width - 16
-        desc_text_upper = banner_image.height - desc_text.height - 12
+        desc_text_left = banner_image.width - desc_text.width - 24
+        desc_text_upper = banner_image.height - desc_text.height - 16
         banner_image.alpha_composite(desc_text, (desc_text_left, desc_text_upper))
 
     # add title text
