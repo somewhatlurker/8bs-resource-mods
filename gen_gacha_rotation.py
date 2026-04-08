@@ -31,6 +31,9 @@ from util import encrypt_replacements_json, read_json_decrypted, \
 LIMITED_CSV_PATH = 'gacha_common/gacha_data/limited_rotation.csv'
 PERMANENT_CSV_PATH = 'gacha_common/gacha_data/permanent.csv'
 
+# 8/pLanet!! stage series
+PERMANENT_TOP_SCREEN_CARDS = [171, 172, 173, 174, 179, 180, 181, 182]
+
 # appearance rates in percent, total is rate including limited and permanent cards
 GACHA_ODDS = {
     'LIMITED_UR': Decimal('1.2'),  # game used around 0.6~1.2%
@@ -523,6 +526,11 @@ def gen_gacha_rotation(resource_path, ver):
     permanent_gacha_entry = _gacha_list_entry(permanent_gacha_data, None, first_gacha_id,
                                               resource_path, ver)
     first_gacha_id += 1
+
+    # add TOP screen cards for permanent_gacha_entry manually
+    for row in permanent_gacha_entry['per_table']:
+        if row['ID'] in PERMANENT_TOP_SCREEN_CARDS:
+            row['TOP'] = 1
 
     limited_gacha_unique_entires = []
     for banner in limited_gacha_data:
