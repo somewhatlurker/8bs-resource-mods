@@ -237,7 +237,7 @@ STEPUP_DETAIL = [
         # step 1: 11x pull for 150 jewels, no bonus
         'STEP': 1,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP1]$コアジュエル150個で11回ガチャ$Pull 11 times for 150 Core Jewels',
+        'DESC': '[STEP1]$コアジュエル150個で11回ガチャ$11-pull for 150 Core Jewels',
         'BUTTON_IMAGE': 'btn_item2_150_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 150,
@@ -249,7 +249,7 @@ STEPUP_DETAIL = [
         # step 2: 11x pull for 250 jewels, pickup card rate 2x
         'STEP': 2,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP2]$1〜11枚目でPICKUP 2倍$Pickup card appearance rates x2',
+        'DESC': '[STEP2]$PICKUP 2倍$Pickup card rates x2',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -261,7 +261,7 @@ STEPUP_DETAIL = [
         # step 3: 11x pull for 250 jewels, 2 SR+ guaranteed
         'STEP': 3,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP3]$1〜11枚目でSR以上2枚確定$At least 2 SR or better cards guaranteed',
+        'DESC': '[STEP3]$SR以上2枚確定$2+ SR or UR guaranteed',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -273,7 +273,7 @@ STEPUP_DETAIL = [
         # step 4: 11x pull for 250 jewels, pickup card rate 4x
         'STEP': 4,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP4]$1〜11枚目でPICKUP 4倍$Pickup card appearance rates x4',
+        'DESC': '[STEP4]$PICKUP 4倍$Pickup card rates x4',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -285,7 +285,7 @@ STEPUP_DETAIL = [
         # step 5: 11x pull for 250 jewels, 1 SR+ guaranteed, bonus 1x level limit up item
         'STEP': 5,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP5]$1〜11枚目でSR以上1枚確定、上限UPアイテム1つ$At least 1 SR or better card,$Get one level limit increase item',
+        'DESC': '[STEP5]$SR以上1枚確定$上限UPアイテム1つ$1+ SR or UR,$1 lvl limit up item',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -297,7 +297,7 @@ STEPUP_DETAIL = [
         # step 6: 11x pull for 250 jewels, 1 SR+ guaranteed, bonus 2x level limit up item
         'STEP': 6,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP5]$1〜11枚目でSR以上1枚確定、上限UPアイテム2つ$At least 1 SR or better card,$Get two level limit increase items',
+        'DESC': '[STEP6]$SR以上1枚確定$上限UPアイテム2つ$1+ SR or UR,$2 lvl limit up items',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -309,7 +309,7 @@ STEPUP_DETAIL = [
         # step 7: 11x pull for 250 jewels, 1 pickup card guaranteed
         'STEP': 7,
         'ENABLE_COUNT': 1,
-        'DESC': '[STEP7]$11枚目にPICKUP衣装確定$One pickup card guaranteed',
+        'DESC': '[STEP7]$11枚目に$PICKUP衣装確定$One pickup card guaranteed',
         'BUTTON_IMAGE': 'btn_item2_250_11',
         'USE_ITEM_ID': 2,
         'USE_ITEM_NUM': 250,
@@ -327,7 +327,7 @@ STEPUP_RULES_TEXT_JA = '[STEP1]\n11回ガチャ\n使用コアジュエル:150個
     '[STEP6]\n11回ガチャ\n使用コアジュエル：250個\n1〜11枚目SR以上1枚確定、\nおまけでレベル上限UPアイテムをランダムで2つGET\n\n' + \
     '[STEP7]\n11回ガチャ\n使用コアジュエル：250個\n11枚目にPICKUP衣装確定'
 
-STEPUP_RULES_TEXT_EN = '[STEP1]\n11-times gacha\nCost: 150 core jewels\n\n' + \
+STEPUP_RULES_TEXT_EN = '[STEP1]\n・11-times gacha\n・Cost: 150 core jewels\n\n' + \
     '[STEP2]\n・11-times gacha\n・Cost: 250 core jewels\n・Pickup card appearance rates x2\n\n' + \
     '[STEP3]\n・11-times gacha\n・Cost: 250 core jewels\n・At least 2 SR or better cards guaranteed\n\n' + \
     '[STEP4]\n・11-times gacha\n・Cost: 250 core jewels\n・Pickup card appearance rates x4\n\n' + \
@@ -493,7 +493,7 @@ def _gen_banner_other_data(
     sr_desc_text_ja = f'「{banner["NAME_JA"]}」のSR衣装全部（イベント衣装込）'
     sr_desc_text_en = f'All {banner["NAME_SHORT_EN"]} SR cards (including event cards)'
     r_desc_text_ja = 'プレミアムガチャで登場衣装と同じ'
-    r_desc_text_en = 'All cards in premium gacha'
+    r_desc_text_en = 'Same as premium gacha'
 
     charas = banner['CHARAS']
     for chara_id in charas:

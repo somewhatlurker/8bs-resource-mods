@@ -405,7 +405,7 @@ def gen_gacha_description_text_combined(
         (values are percentage chance -- e.g. 2.0 == 2.0%)
     - sr_guarantee is whether or not an SR or better card is guaranteed in an 11-pull
     """
-    text = 'SCROLL DOWN FOR ENGLISH!\n\n'
+    text = 'SCROLL DOWN FOR ENGLISH!\n'
     text += gen_gacha_description_text_ja(permanent_gacha_data, limited_gacha_data_dict,
                                           appearance_rates, sr_guarantee)
     text += '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n'
@@ -444,8 +444,7 @@ def gen_gacha_stepup_description_text_ja(
                                                                limited_gacha_data_dict,
                                                                appearance_rates,
                                                                excluded_series)
-    footer_text = '・一部のメンバーはカード情報ボタンで初期ステータスを確認できます。\n'
-    footer_text += '・期間限定で出るメンバーは、再度期間限定で登場する場合があります。'
+    footer_text = '・期間限定で出るメンバーは、再度期間限定で登場する場合があります。'
     return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text
 
 def gen_gacha_stepup_description_text_en(
@@ -479,8 +478,7 @@ def gen_gacha_stepup_description_text_en(
                                                                limited_gacha_data_dict,
                                                                appearance_rates,
                                                                excluded_series)
-    footer_text = '・You can see the initial stats of some cards by tapping the card information button.\n'
-    footer_text += '・Limited cards may be re-released in the future.'
+    footer_text = '・Limited cards may be re-released in the future.'
     return banner_text + step_rules + '\n\n' + odds_text + contents_text + footer_text
 
 def gen_gacha_stepup_description_text_combined(
@@ -509,7 +507,7 @@ def gen_gacha_stepup_description_text_combined(
     - excluded_series is a list of series that are excluded (limiting note for contents)
     - step_rules is a string containing the full step-up rules
     """
-    text = 'SCROLL DOWN FOR ENGLISH!\n\n'
+    text = 'SCROLL DOWN FOR ENGLISH!\n'
     text += gen_gacha_stepup_description_text_ja(permanent_gacha_data,
                                                  limited_gacha_data_dict,
                                                  appearance_rates, excluded_series_ja,
