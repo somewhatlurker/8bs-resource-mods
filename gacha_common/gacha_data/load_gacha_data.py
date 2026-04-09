@@ -59,6 +59,11 @@ class CardDetail:
     def __repr__(self) -> str:
         return f'CardDetail({self.chara}, {self.id}, {self.rarity}, {self.name}, {self.series}, {self.gacha_bg})'
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, CardDetail):
+            return NotImplemented
+        return self.id == other.id
+
     def get_chara_name(self) -> str:
         if not self.name:
             return None

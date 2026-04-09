@@ -382,6 +382,7 @@ def _gen_birthday_gacha_banner_image_ja(
 
     # randomly select up to four cards if multiple characters (max of one per character),
     # or three cards if single character
+    image_cards = image_cards.copy()
     shuffled_image_cards = []
     rd = random.Random(output_gacha_id)
     for _ in range(3 if is_single_chara_banner else 4):
