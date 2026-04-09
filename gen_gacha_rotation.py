@@ -31,8 +31,11 @@ from util import encrypt_replacements_json, read_json_decrypted, \
 LIMITED_CSV_PATH = 'gacha_common/gacha_data/limited_rotation.csv'
 PERMANENT_CSV_PATH = 'gacha_common/gacha_data/permanent.csv'
 
-# 8/pLanet!! stage series
-PERMANENT_TOP_SCREEN_CARDS = [171, 172, 173, 174, 179, 180, 181, 182]
+PERMANENT_TOP_SCREEN_CARDS = [
+    171, 172, 173, 174, 179, 180, 181, 182,  # 8/pLanet!! [Stage]
+    473, 474,  # 2_wEi [Nightmare]
+    666, 667, 668  # B.A.C [B.A.C]
+]
 
 # appearance rates in percent, total is rate including limited and permanent cards
 GACHA_ODDS = {
