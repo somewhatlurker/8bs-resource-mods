@@ -143,11 +143,11 @@ def upd_733():
     # 1. `python new_ver.py res 732 733`
     new_ver(RESOURCE_PATH, 732, 733)
 
-    # 2. `python gen_gacha_rotation.py res 733`
-    gen_gacha_rotation(RESOURCE_PATH, 733)
+    # 2. `python gen_gacha_rotation.py res 733 2026 2031`
+    gen_gacha_rotation(RESOURCE_PATH, 733, 2026, 2031)
 
-    # 3. `python gen_gacha_birthday_stepup.py res 733`
-    gen_gacha_birthday_stepup(RESOURCE_PATH, 733)
+    # 3. `python gen_gacha_birthday_stepup.py res 733 2026 2031`
+    gen_gacha_birthday_stepup(RESOURCE_PATH, 733, 2026, 2031)
 
     # 4. `python gen_delta_update.py res 732 733`
     gen_delta_update(RESOURCE_PATH, 732, 733)

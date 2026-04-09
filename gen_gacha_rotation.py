@@ -499,7 +499,7 @@ def _gen_markdown_page_en(
     return output
 
 
-def gen_gacha_rotation(resource_path, ver):
+def gen_gacha_rotation(resource_path, ver, start_year, end_year):
     master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
     master_chara = json.loads(master_chara)
     master_gacha_main = read_json_decrypted(resource_path, ver, 'json/master_gacha_main.json')
@@ -547,10 +547,12 @@ def gen_gacha_rotation(resource_path, ver):
     # print(limited_gacha_unique_entires)
 
     master_gacha_rows = []
-    master_gacha_rows.append(_master_gacha_row(permanent_gacha_entry, gacha_id, 2025))
+    master_gacha_rows.append(
+        _master_gacha_row(permanent_gacha_entry, gacha_id, start_year)
+    )
     gacha_id += 1
 
-    for year in range(2025, 2038):
+    for year in range(start_year, end_year + 1):
         for entry in limited_gacha_unique_entires:
             master_gacha_rows.append(_master_gacha_row(entry, gacha_id, year))
             gacha_id += 1
@@ -599,9 +601,9 @@ def gen_gacha_rotation(resource_path, ver):
 if __name__ == '__main__':
     from sys import argv
 
-    if len(argv) != 3:
-        print('Usage: python gen_gacha_rotation.py <resource_path> <ver>')
-        print('Example: python gen_gacha_rotation.py res 733')
+    if len(argv) != 5:
+        print('Usage: python gen_gacha_rotation.py <resource_path> <ver> <start_year> <end_year>')
+        print('Example: python gen_gacha_rotation.py res 733 2026 2031')
         exit()
 
-    gen_gacha_rotation(argv[1], int(argv[2]))
+    gen_gacha_rotation(argv[1], int(argv[2]), int(argv[3]), int(argv[4]))

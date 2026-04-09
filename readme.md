@@ -40,20 +40,22 @@ versions.
 Changes are written into `<ver_old + 1>.zip`, located in the new version's directory.
 
 ### gen\_gacha\_birthday\_stepup.py
-Usage: `python gen_gacha_birthday_stepup.py <resource_path> <ver>`
+Usage: `python gen_gacha_birthday_stepup.py <resource_path> <ver> <start_year> <end_year>`
 
-Generate birthday gacha banners in step-up gacha, until 2037.
+Generate birthday gacha banners in step-up gacha, lasting until the end of `end_year`.
 The banners contain:
  - Only the birthday girl's cards for SR and UR rarities (including event cards)
  - Birthday cards as pickup cards (where available), otherwise all of the birthday girl's
      UR cards
  - Same cards as the regular yearly rotation for R rarity
 
+Warning: always use the same `start_year`, because step-up gacha IDs must not change.
+
 ### gen\_gacha\_rotation.py
-Usage: `python gen_gacha_rotation.py <resource_path> <ver>`
+Usage: `python gen_gacha_rotation.py <resource_path> <ver> <start_year> <end_year>`
 
 Generates a yearly premium gacha rotation, based on spreadsheet (csv) data, lasting until
-2037.
+the end of `end_year`.
 Consists of:
  - A permanent lineup that is always available
  - A list of limited series, which occur at a given ISO week numbers
@@ -135,9 +137,12 @@ can obtain event cards and rewards.
 Version 733 is recommended to setup gacha (premium gacha rotation and birthday stepup
 gacha).
 
+The ending year is set to 2031 to reduce the size/length of data (improves loading times).
+After 2031, it will be possible to add new gacha data (and remove the old data).
+
 1. `python new_ver.py res 732 733`
-2. `python gen_gacha_rotation.py res 733`
-3. `python gen_gacha_birthday_stepup.py res 733`
+2. `python gen_gacha_rotation.py res 733 2026 2031`
+3. `python gen_gacha_birthday_stepup.py res 733 2026 2031`
 4. `python gen_delta_update.py res 732 733`
 
 ### Cleanup
