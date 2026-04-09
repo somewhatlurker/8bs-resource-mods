@@ -100,7 +100,7 @@ MONTHS_EN = {
 
 HTML_TABLE_STRINGS_JA = {
     'starts_on': 'Starts On',
-    'weekday_closest_to_date': '{weekday} closest to {date}',
+    'weekday_after_date': '{weekday} after {date}',
     'date_format': '%m月%d日',
     'duration': 'Duration',
     'suffix_days': '日',
@@ -109,7 +109,7 @@ HTML_TABLE_STRINGS_JA = {
 }
 HTML_TABLE_STRINGS_EN = {
     'starts_on': 'Starts On',
-    'weekday_closest_to_date': '{weekday} closest to {date}',
+    'weekday_after_date': '{weekday} after {date}',
     'date_format': '%m/%d',
     'duration': 'Duration',
     'suffix_days': ' Days',
@@ -442,12 +442,13 @@ def _gen_limited_html_table(
             month_cell = ''
 
         start_date_approx = limited_data_start_date_earliest(limited_data)
-        start_date_approx += timedelta(days=3)
         weekday = weekdays.get(limited_data.get('DATE_OFFSET', 0))
         date_str = start_date_approx.strftime(strings.get('date_format'))
-        starts_on_text = strings.get('weekday_closest_to_date').format(weekday=weekday,
-                                                                       date=date_str)
-        starts_on_cell = f'<td>{starts_on_text}</td>'
+        starts_on_text = strings.get('weekday_after_date').format(weekday=weekday,
+                                                                  date=date_str)
+        starts_on_attrs = f'data-iso-week="{limited_data["ISO_WEEK"]}"'
+        starts_on_attrs += f' data-date-offset="{limited_data.get("DATE_OFFSET", 0)}"'
+        starts_on_cell = f'<td {starts_on_attrs}>{starts_on_text}</td>'
         starts_on_cell = indent*2 + starts_on_cell + '\n'
 
         duration_days = limited_data.get('DURATION_DAYS', 0)
