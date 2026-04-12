@@ -117,6 +117,42 @@ HTML_TABLE_STRINGS_EN = {
     'contents': 'Limited Cards'
 }
 
+HTML_TABLE_STYLE = '''<style>
+    table.gacha-schedule-limited {
+        border: 2px solid black;
+        border-spacing: 0;
+    }
+    table.gacha-schedule-limited th, table.gacha-schedule-limited td {
+        border: 1px solid black;
+        padding: 0.05em 0.25em;
+    }
+    table.gacha-schedule-limited {
+        --month-fg-main: #222;
+        --month-fg-alt: #fff;
+        --month-bg-main: #f8f8f8;
+        --month-bg-alt: #666;
+    }
+    table.gacha-schedule-limited th.month {
+        writing-mode: vertical-rl;
+        min-width: 1.3em;
+        border: none;
+    }
+    table.gacha-schedule-limited th.month.row-color-main {
+        color: var(--month-fg-main);
+        background-color: var(--month-bg-main);
+    }
+    table.gacha-schedule-limited th.month.row-color-alt {
+        color: var(--month-fg-alt);
+        background-color: var(--month-bg-alt);
+    }
+    table.gacha-schedule-limited th.month.row-trans-main {
+        background: linear-gradient(var(--month-bg-alt), var(--month-bg-main));
+    }
+    table.gacha-schedule-limited th.month.row-trans-alt {
+        background: linear-gradient(var(--month-bg-main), var(--month-bg-alt));
+    }
+</style>'''
+
 HTML_BANNER_IMAGE_PATH = 'static/gacha/img_banner{id}.png'
 
 
@@ -383,7 +419,8 @@ def _gen_limited_html_table(
 
         return start_date_earliest.month == month and end_date_latest.month == month
 
-    output = '<table>\n'
+    output = HTML_TABLE_STYLE + '\n'
+    output += '<table class="gacha-schedule-limited">\n'
     output += indent + '<tr>\n'
     output += indent*2 + '<th class="month-header"></th>\n'
     output += indent*2 + f'<th>{strings.get("starts_on")}</th>\n'
@@ -392,9 +429,9 @@ def _gen_limited_html_table(
     output += indent*2 + f'<th>{strings.get("contents")}</th>\n'
     output += indent + '</tr>\n'
 
-    month_headers_until = 0   # how many entries already have their month header done
-                              # (i.e. don't need to create one)
-    alt_colour_class = False  # simple flag for whether to output with alt bg class
+    month_headers_until = 0  # how many entries already have their month header done
+                             # (i.e. don't need to create one)
+    alt_colour_class = True  # simple flag for whether to output with alt bg class
 
     for i, entry in enumerate(entries):
         limited_data = entry.get('limited_data')
@@ -426,6 +463,7 @@ def _gen_limited_html_table(
                     break
 
             if is_standard:
+                alt_colour_class = not alt_colour_class
                 colour_cls = 'row-color-alt' if alt_colour_class else 'row-color-main'
                 month_cls = f'month {colour_cls}'
                 month_text = months.get(start_month)
@@ -437,7 +475,6 @@ def _gen_limited_html_table(
 
             month_cell = indent*2 + month_cell + '\n'
             month_headers_until = i + span
-            alt_colour_class = not alt_colour_class
         else:
             month_cell = ''
 
@@ -463,6 +500,7 @@ def _gen_limited_html_table(
 
         contents_text = entry.get(contents_key)
         contents_text = contents_text.replace('\n', '<br>')
+        contents_text = '<p>' + contents_text.replace('<br><br>', '<p>')
         contents_cell = f'<td>{contents_text}</td>'
         contents_cell = indent*2 + contents_cell + '\n'
 
@@ -480,7 +518,7 @@ def _gen_markdown_page_en(
         permanent_gacha_entry: dict,
         limited_gacha_unique_entires: List[dict]
     ) -> str:
-    output = '# Gacha Timetable\n\n'
+    output = '# Premium Gacha Timetable\n\n'
 
     output += '## Permanent Gacha\n'
     output += 'These cards are always available, '
@@ -489,6 +527,7 @@ def _gen_markdown_page_en(
     output += f'![permanent gacha banner image]({image_path})\n\n'
     contents_text = permanent_gacha_entry.get('perm_contents_text_en')
     contents_text = contents_text.replace('\n', '<br>')
+    contents_text = contents_text.replace('<br><br>', '<p>')
     output += contents_text + '\n\n'
 
     output += '## Limited Gacha\n'
