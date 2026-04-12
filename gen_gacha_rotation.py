@@ -601,7 +601,7 @@ def gen_gacha_rotation(resource_path, ver, start_year, end_year):
 
     # output markdown page and web images
     md = _gen_markdown_page_en(permanent_gacha_entry, limited_gacha_unique_entires)
-    with open(f'gacha_md/index.md', 'w', encoding='utf-8') as f:
+    with open(f'gacha_md/premium.md', 'w', encoding='utf-8') as f:
         f.write(md)
 
     for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
