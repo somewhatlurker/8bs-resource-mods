@@ -3,14 +3,17 @@ Resource modifications for 8 beat Story♪ to enhance QoL for playing on custom 
 
 
 ## Setup
-1. Install Python 3.12+ and pycryptodome package (can be installed in venv)
-2. Copy resource .zip files to `res` directory, e.g. `res/729/1_bg.zip`, ...
+1. Install Python 3.12+ and all requirements (`pip install -r requirements.txt`).
+    - Can be installed in a venv.
+2. Optionally, install imagequant (`pip install imagequant`), for higher quality image
+   generation.
+3. Copy resource .zip files to `res` directory, e.g. `res/729/1_bg.zip`, ...
     - You can use Android or iOS resources. The only difference seems to be a few
       old/unused files leftover in the iOS version.
-3. Copy `tutorial_2.zip` to `tutorial` directory.
-4. Copy the game's Android .apk file (version 2.3.15) to the `apk` directory, rename
+4. Copy `tutorial_2.zip` to `tutorial` directory.
+5. Copy the game's Android .apk file (version 2.3.15) to the `apk` directory, rename
    it to `game.apk`.
-5. Copy your `server-public-key.pem` and `server-private-key.pem` to `keys` directory
+6. Copy your `server-public-key.pem` and `server-private-key.pem` to `keys` directory
     - Also copy source's public key as `server-public-key-orig.pem` if you'd like to
       re-encrypt files from old key to new key.
 

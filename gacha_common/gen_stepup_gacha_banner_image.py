@@ -387,4 +387,4 @@ def gen_stepup_gacha_banner_image(
     title_text_upper = 6
     banner_image.alpha_composite(title_text, (title_text_left, title_text_upper))
 
-    return banner_image.convert('RGB')
+    return banner_image.convert('RGBA')

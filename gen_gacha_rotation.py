@@ -28,6 +28,16 @@ from util import encrypt_replacements_json, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
 
 
+try:
+    import imagequant
+    def image_quantize(image: Image) -> Image:
+        return imagequant.quantize_pil_image(image, max_quality=90)
+except ImportError:
+    print('Warning: imagequant not installed, will use lower quality quantisation.')
+    def image_quantize(image: Image) -> Image:
+        return image.quantize()
+
+
 LIMITED_CSV_PATH = 'gacha_common/gacha_data/limited_rotation.csv'
 PERMANENT_CSV_PATH = 'gacha_common/gacha_data/permanent.csv'
 
@@ -287,7 +297,7 @@ def _gacha_list_entry(
     ) -> dict:
     banner_image = _gen_limited_gacha_banner_image_ja(limited_gacha_data_dict,
                                                       first_gacha_id, resource_path, ver)
-    banner_image = banner_image.quantize()
+    banner_image = image_quantize(banner_image)
     # banner_image.save(f'gacha_banners/img_banner{first_gacha_id}.png')
 
     desc_text = gen_gacha_description_text_combined(permanent_gacha_data,
