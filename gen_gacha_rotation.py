@@ -131,6 +131,7 @@ HTML_TABLE_STYLE = '''<style>
     table.gacha-schedule-limited {
         border: 2px solid black;
         border-spacing: 0;
+        margin: 0.5em 0;
     }
     table.gacha-schedule-limited th, table.gacha-schedule-limited td {
         border: 1px solid black;
@@ -541,7 +542,8 @@ def _gen_markdown_page_en(
     output += contents_text + '\n\n'
 
     output += '## Limited Gacha\n'
-    output += 'These cards are only available for a short time during the set period.\n\n'
+    output += 'These cards are only available for a short time during the set period.\n'
+    output += 'They have boosted odds compared to other cards.\n\n'
     output += _gen_limited_html_table(limited_gacha_unique_entires, HTML_TABLE_STRINGS_EN,
                                       MONTHS_EN, WEEKDAYS_EN, 'limited_contents_text_en')
 
