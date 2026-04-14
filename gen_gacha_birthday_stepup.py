@@ -11,7 +11,7 @@ import json
 import math
 from os.path import join as path_join
 import random
-from typing import List
+from typing import Dict, List
 
 from PIL import Image
 
@@ -377,6 +377,33 @@ WEEKDAYS_EN = {
     6: 'Sun'
 }
 
+HTML_TABLE_STRINGS_JA = {
+    'date': 'Date',
+    'date_format': '%m月%d日',
+    'image': 'Image',
+    'contents': 'Pickup Cards'
+}
+HTML_TABLE_STRINGS_EN = {
+    'date': 'Date',
+    'date_format': '%m/%d',
+    'image': 'Image',
+    'contents': 'Pickup Cards'
+}
+
+HTML_TABLE_STYLE = '''<style>
+    table.gacha-schedule-birthday {
+        border: 2px solid black;
+        border-spacing: 0;
+        margin: 0.5em 0;
+    }
+    table.gacha-schedule-birthday th, table.gacha-schedule-birthday td {
+        border: 1px solid black;
+        padding: 0.05em 0.25em;
+    }
+</style>'''
+
+HTML_BANNER_IMAGE_PATH = 'static/gacha/img_banner2_{id}.png'
+
 
 def _gen_birthday_gacha_banner_image_ja(
         banner_dict: dict,
@@ -526,6 +553,46 @@ def _gen_banner_other_data(
     }
 
 
+def _gacha_short_contents_text(
+        permanent_gacha_data: List[dict],
+        limited_gacha_data_dict: dict | None,
+        appearance_rates: dict,
+        lang_code: str
+    ):
+    lang_code = lang_code.upper()
+
+    def contents_string_for_rarity(rarity: str):
+        rarity = rarity.upper()
+        desc_text_key = f'{rarity}_DESC_TEXT_{lang_code}'
+        total_key = f'TOTAL_{rarity}'
+
+        if appearance_rates.get(total_key, 0) == 0:
+            return ''
+
+        text = ''
+
+        if limited_gacha_data_dict:
+            lim_desc_text = limited_gacha_data_dict.get(desc_text_key, '').strip()
+            if lim_desc_text:
+                text += lim_desc_text + '\n'
+
+        for series in permanent_gacha_data:
+            perm_desc_text = series.get(desc_text_key, '').strip()
+            if perm_desc_text:
+                text += perm_desc_text + '\n'
+
+        if not text:
+            return ''
+
+        text = f'{rarity}:\n' + text + '\n'
+        return text
+
+    contents_text = contents_string_for_rarity('UR')
+    contents_text += contents_string_for_rarity('SR')
+    contents_text += contents_string_for_rarity('R')
+    contents_text += contents_string_for_rarity('N')
+    return contents_text.strip()
+
 def _gacha_list_entry(
         banner_dict: dict,
         other_gacha_data: dict,  # note: = non-limited for this banner
@@ -579,6 +646,11 @@ def _gacha_list_entry(
     # with open(f'gacha_banners/banner{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
     #     f.write(desc_text)
 
+    limited_contents_text_ja = _gacha_short_contents_text([], limited_gacha_data_dict,
+                                                          appearance_rates, 'ja')
+    limited_contents_text_en = _gacha_short_contents_text([], limited_gacha_data_dict,
+                                                          appearance_rates, 'en')
+
     per_table = gen_gacha_stepup_per_table([other_gacha_data], limited_gacha_data_dict,
                                            appearance_rates)
     # with open(f'gacha_banners/table{first_gacha_id}.txt', 'w', encoding='utf-8') as f:
@@ -592,7 +664,9 @@ def _gacha_list_entry(
         'desc_text': desc_text,
         'per_table': per_table,
         'limited_data': limited_gacha_data_dict,
-        'other_data': other_gacha_data
+        'other_data': other_gacha_data,
+        'limited_contents_text_ja': limited_contents_text_ja,
+        'limited_contents_text_en': limited_contents_text_en
     }
 
 def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
@@ -644,6 +718,63 @@ def _master_gacha_row(entry: dict, gacha_id: int, year: int) -> dict:
         'END_MINUTE': 0
     }
 
+def _gen_schedule_html_table(
+        entries: List[dict],
+        strings: Dict[str, str],
+        contents_key: str,
+        indent: str='    '
+    ) -> str:
+    output = HTML_TABLE_STYLE + '\n'
+    output += '<table class="gacha-schedule-birthday">\n'
+    output += indent + '<tr>\n'
+    output += indent*2 + f'<th>{strings.get("date")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("image")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("contents")}</th>\n'
+    output += indent + '</tr>\n'
+
+    for entry in entries:
+        limited_data = entry.get('limited_data')
+        if not limited_data:
+            continue
+
+        output += indent + '<tr>\n'
+
+        date_str = limited_data['START_DATE'].strftime(strings.get('date_format'))
+        date_cell = f'<td>{date_str}</td>'
+        date_cell = indent*2 + date_cell + '\n'
+
+        image_path = HTML_BANNER_IMAGE_PATH.format(id=entry["first_gacha_id"])
+        image_tag = f'<img src="{image_path}" width=240 height=80 />'
+        image_tag = indent*3 + image_tag + '\n'
+        image_cell = indent*2 + '<td>\n' + image_tag + indent*2 + '</td>\n'
+
+        contents_text = entry.get(contents_key)
+        contents_text = contents_text.replace('\n', '<br>')
+        contents_text = '<p>' + contents_text.replace('<br><br>', '<p>')
+        contents_cell = f'<td>{contents_text}</td>'
+        contents_cell = indent*2 + contents_cell + '\n'
+
+        output += date_cell
+        output += image_cell
+        output += contents_cell
+        output += indent + '</tr>\n'
+
+    output += '</table>'
+    return output
+
+def _gen_markdown_page_en(stepup_gacha_unique_entires: List[dict]) -> str:
+    output = '# Birthday Gacha\n\n'
+    output += 'Step-up gacha is enabled on members\' birthdays, lasting for five days.\n'
+    output += 'All SR and UR cards pulled will be the birthday girl(s), '
+    output += 'and you can pull most event SRs!\n\n'
+    output += 'The special pickup cards will have boosted odds,'
+    output += 'and one of them is guaranteed on step 7.\n\n'
+
+    output += _gen_schedule_html_table(stepup_gacha_unique_entires, HTML_TABLE_STRINGS_EN,
+                                       'limited_contents_text_en')
+
+    return output
+
 
 def gen_gacha_birthday_stepup(resource_path, ver, start_year, end_year):
     master_chara = read_json_decrypted(resource_path, ver, 'json/master_chara.json')
@@ -688,6 +819,20 @@ def gen_gacha_birthday_stepup(resource_path, ver, start_year, end_year):
             gacha_id += 1
 
     # print(master_gacha_rows)
+
+
+    # output markdown page and web images
+    md = _gen_markdown_page_en(stepup_gacha_unique_entires)
+    with open(f'gacha_md/birthday.md', 'w', encoding='utf-8') as f:
+        f.write(md)
+
+    for entry in stepup_gacha_unique_entires:
+        first_id = entry['first_gacha_id']
+        # resize because no need for such large images on web
+        banner_image = entry['banner_image'].convert('RGBA').resize((480, 160))
+        banner_image = image_quantize(banner_image)
+        banner_image.save(f'gacha_md/static/gacha/img_banner2_{first_id}.png')
+
 
     # add gacha detail sheets
     replacements = {}
