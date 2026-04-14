@@ -101,7 +101,7 @@ def _gen_gacha_title_text_image(title, shadow_colour) -> Image.Image:
     )
 
     # rotate the image
-    max_angle = math.degrees(math.asin(50 / image.width))
+    max_angle = math.degrees(math.asin(23 * BANNER_TITLE_SCALE_FACTOR / image.width))
     angle = min(3.3, max_angle)
     image = image.rotate(angle, Image.Resampling.BILINEAR, expand=True)
 
