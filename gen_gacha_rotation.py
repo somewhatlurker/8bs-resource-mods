@@ -402,7 +402,6 @@ def _gen_limited_html_table(
     ) -> str:
     def limited_data_start_date_earliest(limited_data: dict):
         iso_week = limited_data['ISO_WEEK']
-        duration = limited_data['DURATION_DAYS']
         date_offset = limited_data.get('DATE_OFFSET', 0)
 
         # 2004 was a leap year starting on Thursday, giving the earliest possible date
@@ -417,13 +416,10 @@ def _gen_limited_html_table(
         # 2010 was a common year starting on Friday, giving the latest possible date
         # for each ISO week.
         start_date_latest = date.fromisocalendar(2010, iso_week, date_offset + 1)
-        return start_date_latest + timedelta(days=date_offset)
+        return start_date_latest + timedelta(days=duration - 1)
 
     def entry_is_fully_in_month(entry: dict, month: int):
         limited_data = entry['limited_data']  # must have for this, exception is fine
-        iso_week = limited_data['ISO_WEEK']
-        duration = limited_data['DURATION_DAYS']
-        date_offset = limited_data.get('DATE_OFFSET', 0)
 
         start_date_earliest = limited_data_start_date_earliest(limited_data)
         end_date_latest = limited_data_end_date_latest(limited_data)
