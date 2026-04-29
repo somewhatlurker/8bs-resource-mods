@@ -154,8 +154,8 @@ BIRTHDAY_BANNERS = [
         'DATE': date(1900, 1, 11),
         'NAME_JA': 'B.A.Cメンバー', 'NAME_EN': 'B.A.C Members\'',
         'NAME_SHORT_JA': 'B.A.C', 'NAME_SHORT_EN': 'B.A.C',
-        'DESC_JA': 'SR以上はB.A.Cメンバーのみ出現！',
-        'DESC_EN': 'SR and above are B.A.C members only!',
+        'DESC_JA': 'STEP7でUR確定！\n' + 'SR以上はB.A.Cメンバーのみ出現！',
+        'DESC_EN': 'UR guaranteed on step 7!\n' + 'SR and above are B.A.C members only!',
         'BG': 'bg222',
         'CHARAS': (13, 14, 15)
     }
@@ -170,15 +170,16 @@ for chara_id in (7, 4, 5, 3, 2, 8, 6, 11, 12, 1):
         'NAME_SHORT_EN': CHARA_NAMES_SHORT_EN[chara_id],
         'DESC_JA': (
             f'STEP7で限定UR「お誕生日 {CHARA_NAMES_SHORT_JA[chara_id]}」確定！\n' +
-            f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
+            f'SR以上は{CHARA_NAMES_SHORT_JA[chara_id]}のみ出現！'
         ) if chara_id in range(1, 9) else (
-            f'STEP7で「{CHARA_NAMES_SHORT_JA[chara_id]}」UR確定！\n' +
-            f'SR以上は「{CHARA_NAMES_SHORT_JA[chara_id]}」のみ出現！'
+            'STEP7でUR確定！\n' +
+            f'SR以上は{CHARA_NAMES_SHORT_JA[chara_id]}のみ出現！'
         ),
         'DESC_EN': (
-            f'Limited {CHARA_NAMES_SHORT_EN[chara_id]} birthday UR!\n' +
+            f'Limited {CHARA_NAMES_SHORT_EN[chara_id]} birthday URs!\n' +
             f'SR and above are {CHARA_NAMES_SHORT_EN[chara_id]} only!'
         ) if chara_id in range(1, 9) else (
+            'UR guaranteed on step 7!\n' +
             f'SR and above are {CHARA_NAMES_SHORT_EN[chara_id]} only!'
         ),
         'BG': CHARA_BIRTHDAY_BGS[chara_id],
