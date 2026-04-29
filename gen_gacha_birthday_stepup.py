@@ -378,10 +378,10 @@ WEEKDAYS_EN = {
 }
 
 HTML_TABLE_STRINGS_JA = {
-    'date': 'Date',
+    'date': '日付',
     'date_format': '%m月%d日',
-    'image': 'Image',
-    'contents': 'Pickup Cards'
+    'image': '画像',
+    'contents': 'ピックアップ衣装'
 }
 HTML_TABLE_STRINGS_EN = {
     'date': 'Date',
@@ -402,7 +402,7 @@ HTML_TABLE_STYLE = '''<style>
     }
 </style>'''
 
-HTML_BANNER_IMAGE_PATH = 'static/gacha/img_banner2_{id}.png'
+HTML_BANNER_IMAGE_PATH = '/static/gacha/img_banner2_{id}.png'
 
 
 def _gen_birthday_gacha_banner_image_ja(
@@ -764,7 +764,7 @@ def _gen_schedule_html_table(
 
 def _gen_markdown_page_en(stepup_gacha_unique_entires: List[dict]) -> str:
     output = '# Birthday Gacha\n\n'
-    output += 'Step-up gacha is enabled on members\' birthdays, lasting for five days.\n'
+    output += 'Step-up gacha is enabled on members\' birthdays, lasting for five days.  \n'
     output += 'All SR and UR cards pulled will be the birthday girl(s), '
     output += 'and you can pull most event SRs!\n\n'
     output += 'The special pickup cards will have boosted odds,'
@@ -772,6 +772,18 @@ def _gen_markdown_page_en(stepup_gacha_unique_entires: List[dict]) -> str:
 
     output += _gen_schedule_html_table(stepup_gacha_unique_entires, HTML_TABLE_STRINGS_EN,
                                        'limited_contents_text_en')
+
+    return output
+
+def _gen_markdown_page_ja(stepup_gacha_unique_entires: List[dict]) -> str:
+    output = '# 誕生日ガチャ\n\n'
+    output += 'メンバーの誕生日に、5日間の期限でステップアップガチャは開催されます。  \n'
+    output += '出現するSRとUR衣装はすべて誕生日を迎えるキャラで、'
+    output += 'イベント限定SRのほとんどが含まれています！\n\n'
+    output += 'ピックアップ衣装の入手確率が高くなっていますに、STEP7で1枚が必ず入手される。\n\n'
+
+    output += _gen_schedule_html_table(stepup_gacha_unique_entires, HTML_TABLE_STRINGS_JA,
+                                       'limited_contents_text_ja')
 
     return output
 
@@ -822,9 +834,12 @@ def gen_gacha_birthday_stepup(resource_path, ver, start_year, end_year):
 
 
     # output markdown page and web images
-    md = _gen_markdown_page_en(stepup_gacha_unique_entires)
+    md_en = _gen_markdown_page_en(stepup_gacha_unique_entires)
     with open(f'gacha_md/birthday.md', 'w', encoding='utf-8') as f:
-        f.write(md)
+        f.write(md_en)
+    md_ja = _gen_markdown_page_ja(stepup_gacha_unique_entires)
+    with open(f'gacha_md/birthday_ja.md', 'w', encoding='utf-8') as f:
+        f.write(md_ja)
 
     for entry in stepup_gacha_unique_entires:
         first_id = entry['first_gacha_id']

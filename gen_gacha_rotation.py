@@ -109,17 +109,17 @@ MONTHS_EN = {
 }
 
 HTML_TABLE_STRINGS_JA = {
-    'starts_on': 'Starts On',
-    'weekday_after_date': '{weekday} after {date}',
+    'starts_on': '開始',
+    'weekday_after_date': '{date}以降<br>の{weekday}曜日',
     'date_format': '%m月%d日',
-    'duration': 'Duration',
+    'duration': '期限',
     'suffix_days': '日',
-    'image': 'Image',
-    'contents': 'Limited Cards'
+    'image': '画像',
+    'contents': '限定衣装'
 }
 HTML_TABLE_STRINGS_EN = {
     'starts_on': 'Starts On',
-    'weekday_after_date': '{weekday} after {date}',
+    'weekday_after_date': '{weekday} after<br>{date}',
     'date_format': '%m/%d',
     'duration': 'Duration',
     'suffix_days': ' Days',
@@ -164,7 +164,7 @@ HTML_TABLE_STYLE = '''<style>
     }
 </style>'''
 
-HTML_BANNER_IMAGE_PATH = 'static/gacha/img_banner{id}.png'
+HTML_BANNER_IMAGE_PATH = '/static/gacha/img_banner{id}.png'
 
 
 def _gen_limited_gacha_banner_image_ja(
@@ -538,10 +538,33 @@ def _gen_markdown_page_en(
     output += contents_text + '\n\n'
 
     output += '## Limited Gacha\n'
-    output += 'These cards are only available for a short time during the set period.\n'
+    output += 'These cards are only available for a short time during the set period.  \n'
     output += 'They have boosted odds compared to other cards.\n\n'
     output += _gen_limited_html_table(limited_gacha_unique_entires, HTML_TABLE_STRINGS_EN,
                                       MONTHS_EN, WEEKDAYS_EN, 'limited_contents_text_en')
+
+    return output
+
+def _gen_markdown_page_ja(
+        permanent_gacha_entry: dict,
+        limited_gacha_unique_entires: List[dict]
+    ) -> str:
+    output = '# プレミアムガチャ・タイムテーブル\n\n'
+
+    output += '## 通常ガチャ\n'
+    output += 'この衣装はいつでも引けるもの、限定バナーの有無に関わらない。\n\n'
+    image_path = HTML_BANNER_IMAGE_PATH.format(id=permanent_gacha_entry["first_gacha_id"])
+    output += f'![通常ガチャのバナー画像]({image_path})\n\n'
+    contents_text = permanent_gacha_entry.get('perm_contents_text_ja')
+    contents_text = contents_text.replace('\n', '<br>')
+    contents_text = contents_text.replace('<br><br>', '<p>')
+    output += contents_text + '\n\n'
+
+    output += '## 限定ガチャ\n'
+    output += 'この衣装は設定期間中の短期間のみ入手可能です。  \n'
+    output += '通常の衣装と比べて、入手確率が高くなっています。\n\n'
+    output += _gen_limited_html_table(limited_gacha_unique_entires, HTML_TABLE_STRINGS_JA,
+                                      MONTHS_JA, WEEKDAYS_JA, 'limited_contents_text_ja')
 
     return output
 
@@ -608,9 +631,12 @@ def gen_gacha_rotation(resource_path, ver, start_year, end_year):
 
 
     # output markdown page and web images
-    md = _gen_markdown_page_en(permanent_gacha_entry, limited_gacha_unique_entires)
+    md_en = _gen_markdown_page_en(permanent_gacha_entry, limited_gacha_unique_entires)
     with open(f'gacha_md/premium.md', 'w', encoding='utf-8') as f:
-        f.write(md)
+        f.write(md_en)
+    md_ja = _gen_markdown_page_ja(permanent_gacha_entry, limited_gacha_unique_entires)
+    with open(f'gacha_md/premium_ja.md', 'w', encoding='utf-8') as f:
+        f.write(md_ja)
 
     for entry in [permanent_gacha_entry] + limited_gacha_unique_entires:
         first_id = entry['first_gacha_id']
