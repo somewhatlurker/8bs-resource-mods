@@ -525,7 +525,7 @@ def _gen_markdown_page_en(
         permanent_gacha_entry: dict,
         limited_gacha_unique_entires: List[dict]
     ) -> str:
-    output = '# Premium Gacha Timetable\n\n'
+    output = '# Premium Gacha\n\n'
 
     output += '## Permanent Gacha\n'
     output += 'These cards are always available, '
@@ -549,7 +549,7 @@ def _gen_markdown_page_ja(
         permanent_gacha_entry: dict,
         limited_gacha_unique_entires: List[dict]
     ) -> str:
-    output = '# プレミアムガチャ・タイムテーブル\n\n'
+    output = '# プレミアムガチャ\n\n'
 
     output += '## 通常ガチャ\n'
     output += 'この衣装はいつでも引けるもの、限定バナーの有無に関わらない。\n\n'
