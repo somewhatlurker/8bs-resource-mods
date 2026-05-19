@@ -501,13 +501,145 @@ def _verify_gacha_data_chara_name_in_desc_text_ja(
             desc_field = f'{RARITY_ID_TO_NAME[card.rarity]}_DESC_TEXT_JA'
 
             # special case for 8/pLanet!! members: allow "8/pLanet!!全メンバー" as description
-            if card.chara < 9 and "8/pLanet!!全メンバー" in row[desc_field]: continue
+            if card.chara < 9 and '8/pLanet!!全メンバー' in row[desc_field]: continue
 
             chara_name_from_card = card.get_chara_name()
             if chara_name_from_card:
                 if chara_name_from_card in row[desc_field]: continue
 
             raise ValueError(f'Card {card.id} chara name missing in description text')
+
+def _verify_gacha_data_matches_desc_text_ja(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict],
+        master_series_dict: Dict[int, dict]
+    ):
+    """Verify that the description text matches cards actually in gacha.
+
+    Only considers the Japanese text.
+    Only considers the description matching card rarity.
+    Series names may come from either the card or master_series, to account for series
+    where each card has a different name (e.g. animal or star sign).
+
+    Raises ValueError if verification fails.
+    """
+    desc_line_regex = re.compile(r'^【(?P<series>.*)】(?P<charas>.*)')
+    for row in data:
+        # build list of chara names for each series (separated by rarity)
+        rarity_series = {}
+        for rarity in (RARITY_ID_TO_NAME.keys()):
+            desc_field = f'{RARITY_ID_TO_NAME[rarity]}_DESC_TEXT_JA'
+            series_chara_names = {}
+            for line in row.get(desc_field, '').splitlines():
+                match = desc_line_regex.match(line)
+                charas = match.group('charas')
+                charas = charas.replace('8/pLanet!!全メンバー',
+                                        'ひなた、鈴音、月、彩芽、杏梨、ゆきな、ほたる、メイ', 1)
+                series_chara_names[match.group('series')] = charas.split('、')
+            rarity_series[rarity] = series_chara_names
+
+        # check all cards are properly in it, remove them from the lists as we go
+        for card in row['CARDS']:
+            rs = rarity_series[card.rarity]
+            series_name = card.get_series_name()
+
+            # try name of series from master_chara before failing
+            # (some cards have individual card names that don't match the proper series)
+            if series_name not in rs:
+                master_chara_card = master_chara_dict.get(card.id)
+                if not master_chara_card:
+                    raise ValueError(f'Card {card.id} not in master_chara ' +
+                                     f'(r={card.rarity}, s={series_name})')
+                series_name = master_series_dict[master_chara_card['SERIES']]['NAME']
+
+            if series_name not in rs:
+                raise ValueError(f'Series for card {card.id} not in description text (JA) ' +
+                                 f'(r={card.rarity}, s={series_name})')
+
+            series_chara_names = rs[series_name]
+            chara_name = card.get_chara_name()
+            if chara_name not in series_chara_names:
+                raise ValueError(f'Chara name {chara_name} not in description text (JA) ' +
+                                 f'(r={card.rarity}, s={series_name})')
+            series_chara_names.remove(chara_name)
+
+        # confirm lists are empty when done
+        for r in rarity_series.keys():
+            rs = rarity_series[r]
+            for s in rs.keys():
+                chara_names = rs[s]
+                if len(chara_names) != 0:
+                    raise ValueError(f'Description text has extra cards (r={r}, s={s}): {chara_names}')
+
+def _verify_gacha_data_matches_desc_text_en(
+        data: List[dict],
+        master_chara_dict: Dict[int, dict],
+        master_series_dict: Dict[int, dict]
+    ):
+    """Verify that the description text matches cards actually in gacha.
+
+    To avoid storing translations of series names in the script, Japanese series names are
+    used (assumes English description text follows the same order).
+    For character names though, only the English text is considered.
+    Only considers the description matching card rarity.
+    Series names may come from either the card or master_series, to account for series
+    where each card has a different name (e.g. animal or star sign).
+
+    Raises ValueError if verification fails.
+    """
+    desc_line_regex_ja = re.compile(r'^【(?P<series>.*)】(?P<charas>.*)')
+    desc_line_regex_en = re.compile(r'^\[(?P<series>.*)\] (?P<charas>.*)')
+    for row in data:
+        # build list of chara names for each series (separated by rarity)
+        rarity_series = {}
+        for rarity in (RARITY_ID_TO_NAME.keys()):
+            desc_field_ja = f'{RARITY_ID_TO_NAME[rarity]}_DESC_TEXT_JA'
+            desc_field_en = f'{RARITY_ID_TO_NAME[rarity]}_DESC_TEXT_EN'
+            desc_lines_ja = row.get(desc_field_ja, '').splitlines()
+            desc_lines_en = row.get(desc_field_en, '').splitlines()
+
+            series_chara_names = {}
+            for line_ja, line_en in zip(desc_lines_ja, desc_lines_en, strict=True):
+                match_ja = desc_line_regex_ja.match(line_ja)
+                match_en = desc_line_regex_en.match(line_en)
+                charas = match_en.group('charas')
+                charas = charas.replace('All 8/pLanet!! Members',
+                                        'Hinata, Suzune, Akari, Ayame, Anri, Yukina, Hotaru, Mei', 1)
+                series_chara_names[match_ja.group('series')] = charas.split(', ')
+            rarity_series[rarity] = series_chara_names
+
+        # check all cards are properly in it, remove them from the lists as we go
+        for card in row['CARDS']:
+            rs = rarity_series[card.rarity]
+            series_name = card.get_series_name()
+
+            # try name of series from master_chara before failing
+            # (some cards have individual card names that don't match the proper series)
+            if series_name not in rs:
+                master_chara_card = master_chara_dict.get(card.id)
+                if not master_chara_card:
+                    raise ValueError(f'Card {card.id} not in master_chara ' +
+                                     f'(r={card.rarity}, s={series_name})')
+                series_name = master_series_dict[master_chara_card['SERIES']]['NAME']
+
+            if series_name not in rs:
+                raise ValueError(f'Series for card {card.id} not in description text (EN) ' +
+                                 f'(r={card.rarity}, s={series_name})')
+
+            series_chara_names = rs[series_name]
+            chara_name = CHARA_ID_TO_NAME_EN[card.chara]
+            if chara_name not in series_chara_names:
+                raise ValueError(f'Chara name {chara_name} not in description text (EN) ' +
+                                 f'(r={card.rarity}, s={series_name})')
+            series_chara_names.remove(chara_name)
+
+        # confirm lists are empty when done
+        for r in rarity_series.keys():
+            rs = rarity_series[r]
+            for s in rs.keys():
+                chara_names = rs[s]
+                if len(chara_names) != 0:
+                    raise ValueError(f'Description text has extra cards (r={r}, s={s}): {chara_names}')
 
 def _verify_gacha_data_no_missing_cards(
         data: List[dict],
@@ -620,6 +752,8 @@ def _verify_common_gacha_data(
           needs master_chara)
       - name of each card, or its series, is in the description text (Japanese only,
           needs master_chara and master_series)
+      - description text exactly matches the cards present (needs master_chara and
+          master_series, English assumes series are listed in same order as Japanese)
 
     Raises ValueError if verification fails.
     """
@@ -636,6 +770,10 @@ def _verify_common_gacha_data(
             master_series_dict = {x['ID']: x for x in master_series[1:]}
             _verify_gacha_data_series_name_in_desc_text_ja(data, master_chara_dict,
                                                            master_series_dict)
+            _verify_gacha_data_matches_desc_text_ja(data, master_chara_dict,
+                                                    master_series_dict)
+            _verify_gacha_data_matches_desc_text_en(data, master_chara_dict,
+                                                    master_series_dict)
 
 def verify_gacha_data(
         limited_data: List[dict],
@@ -668,6 +806,8 @@ def verify_gacha_data(
           needs master_chara)
       - name of each card, or its series, is in the description text (Japanese only,
           needs master_chara and master_series)
+      - description text exactly matches the cards present (needs master_chara and
+          master_series, English assumes series are listed in same order as Japanese)
 
     Raises ValueError if verification fails.
     """
