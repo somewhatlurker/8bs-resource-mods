@@ -1,0 +1,117 @@
+ISO Week Number,1,1.5,2,2.5,3,3.5,4,5,6,7,7.5,8,8.5,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,41.5,42,42.5,43,43.5,44,44.5,45,46,47,48,49,49.5,50,50.5,51,51.5,52,52.5
+Start Date (Earliest),12/29,01/01,01/05,01/08,01/12,01/15,01/19,01/26,02/02,02/09,02/12,02/16,02/19,02/23,03/01,03/08,03/15,03/22,03/29,04/05,04/12,04/19,04/26,05/03,05/10,05/17,05/24,05/31,06/07,06/14,06/21,06/28,07/05,07/12,07/19,07/26,08/02,08/09,08/16,08/23,08/30,09/06,09/13,09/20,09/27,10/04,10/07,10/11,10/14,10/18,10/21,10/25,10/28,11/01,11/08,11/15,11/22,11/29,12/02,12/06,12/09,12/13,12/16,12/20,12/23
+Start Date (Latest),01/04,01/07,01/11,01/14,01/18,01/21,01/25,02/01,02/08,02/15,02/18,02/22,02/25,03/01,03/08,03/15,03/22,03/29,04/05,04/12,04/19,04/26,05/03,05/10,05/17,05/24,05/31,06/07,06/14,06/21,06/28,07/05,07/12,07/19,07/26,08/02,08/09,08/16,08/23,08/30,09/06,09/13,09/20,09/27,10/04,10/11,10/14,10/18,10/21,10/25,10/28,11/01,11/04,11/08,11/15,11/22,11/29,12/06,12/09,12/13,12/16,12/20,12/23,12/27,12/30
+Start Date Range,12/29 - 01/04,01/01 - 01/07,01/05 - 01/11,01/08 - 01/14,01/12 - 01/18,01/15 - 01/21,01/19 - 01/25,01/26 - 02/01,02/02 - 02/08,02/09 - 02/15,02/12 - 02/18,02/16 - 02/22,02/19 - 02/25,02/23 - 03/01,03/01 - 03/08,03/08 - 03/15,03/15 - 03/22,03/22 - 03/29,03/29 - 04/05,04/05 - 04/12,04/12 - 04/19,04/19 - 04/26,04/26 - 05/03,05/03 - 05/10,05/10 - 05/17,05/17 - 05/24,05/24 - 05/31,05/31 - 06/07,06/07 - 06/14,06/14 - 06/21,06/21 - 06/28,06/28 - 07/05,07/05 - 07/12,07/12 - 07/19,07/19 - 07/26,07/26 - 08/02,08/02 - 08/09,08/09 - 08/16,08/16 - 08/23,08/23 - 08/30,08/30 - 09/06,09/06 - 09/13,09/13 - 09/20,09/20 - 09/27,09/27 - 10/04,10/04 - 10/11,10/07 - 10/14,10/11 - 10/18,10/14 - 10/21,10/18 - 10/25,10/21 - 10/28,10/25 - 11/01,10/28 - 11/04,11/01 - 11/08,11/08 - 11/15,11/15 - 11/22,11/22 - 11/29,11/29 - 12/06,12/02 - 12/09,12/06 - 12/13,12/09 - 12/16,12/13 - 12/20,12/16 - 12/23,12/20 - 12/27,12/23 - 12/30
+Length (Days),3,3,3,3,3,3,5,5,5,3,3,3,3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,3,3,3,3,3,3,3,5,5,5,5,3,3,3,3,3,3,3,3
+Series 1,Shrine Maiden,New Year 2,New Year,New Year,New Year,,,Winter Camping,Setsubun,Valentines,Valentine's,First Love,B.A.C Innocence,Dolls Day,Precious,Precious,Wedding,Chinese,Easter,,Dreamland,Shelter,Magician,Pajamas,Cooking,White Coat,Fairy,Fairy,,Summer Vacation 2,Summer Vacation,Yukata,Tanabata,Midsummer Beach,2_wEi Swimsuit,Marine,B.A.C Swimsuit,Nighttime Pool,Mermaid,,Knitting,Police,2_wEi Autumn,Athletics Festival,Kanade Idol,Nurse,Nurse,Angel & Devil Hinata,Angel & Devil Suzune,Spooky Night,Halloween,Trick/Treat,,,Gemstones,Gemstones,Hot Spring,X'mas,X'mas,2_wEi Christmas,White X'mas,White X'mas,2_wEi HAPPY X'MAS,X'mas Date,Winter Date
+Series 2,,,,,,,,,,B.A.C Valentine's,2_wEi Valentines,,,,,,,Wedding,,,,Rainy Season,Circus,,,,,Mermaid,,,2_wEi Summer Leisure,,2_wEi Yukata,,Kanade Swimsuit,Pirate,,,,,,,,Athletics Festival 2,Kanade Maid,,,Angel & Devil Yukina,Angel & Devil Anri,Horror,,,,,,,,,,,,,B.A.C Noel,,
+Series 3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Angel & Devil Akari,Angel & Devil Ayame,,,,,,,,,,,,,,,,
+Series 4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Angel & Devil Hotaru,Angel & Devil Mei,,,,,,,,,,,,,,,,
+ID Ranges,755-758,"804-805, 806-807",248-250,242-244,255-256,,,"750-751, 765-767",557-558,"261-264, 761-763","269-272, 562-563",810-812,814-816,450-453,"586, 578-580","577, 583-585",121-123,"323-326, 331-334",768-770,,572-573,"341-343, 599-600","373-376, 606","363-366, 368-371",560-561,461-464,133-135,"661, 662",,"727-729, 789-791","152-155, 504-505","164-167, 359-362","785-787, 739-740","355-356, 610-611","698-699, 605","139-142, 146-149",703-705,508-511,"136-137, 351-353",,796-798,669-672,628-629,"529-532, 781-784","571, 574",635-638,"616-617, 619-620","448-449, 471-472,
+495-496, 499-500","380-381, 400-401,
+424-425, 437-438","741-743, 793-794","190-193, 194-197",384-387,,,"614-615, 631-632","714-715, 817-818","214-217, 218-221",227-230,236-239,552-553,639-641,752-754,"799-800, 801-803",418-421,431-434
+Banner Text (ja),「巫女さん」シリーズ,「迎春」&「初詣」シリーズ,「謹賀新年」シリーズ,「ゆく年くる年」シリーズ,「お正月」シリーズ,,,「冬キャンプ」シリーズ,「節分」シリーズ,"ハニプラ & B.A.C
+「バレンタイン」シリーズ","ハニプラ & 2_wEi
+「バレンタイン」シリーズ",「初恋」シリーズ,"B.A.C
+「Innocence」シリーズ",「ひな祭り」シリーズ,「Precious」シリーズ,「Precious」シリーズ,「ウェディング」シリーズ,"「中華」&
+「ウェディング」シリーズ",「イースター」シリーズ,,「夢の世界」シリーズ,"ハニプラ「雨宿り」&
+2_wEi「梅雨」シリーズ","「マジシャン」シリーズ
+&「サーカス」ひなた",「パジャマ」シリーズ,「料理」シリーズ,「白衣」シリーズ,「妖精」シリーズ,"「妖精」彩芽 &
+「人魚」ほたる",,「サマーバカンス」シリーズ,"ハニプラ「夏休み」&
+2_wEi「夏のレジャー」シリーズ",「浴衣」シリーズ,"ハニプラ「七夕」&
+2_wEi「浴衣」シリーズ",「真夏の海」シリーズ,"2_wEi & かなで
+「水着」シリーズ","「MARINE」&
+「パイレーツ」シリーズ","B.A.C
+「水着」シリーズ",「夜のプール」シリーズ,「人魚」シリーズ,,「編み物」シリーズ,「ポリス」シリーズ,"2_wEi
+「オータム」シリーズ",「体育祭」シリーズ,"かなで
+「アイドル」&「メイド」",「ナース」シリーズ,「ナース」シリーズ,"「天使」&
+「悪魔」シリーズ","「天使」&
+「悪魔」シリーズ","2_wEi「ホラー」&
+B.A.C「Spooky Night」シリーズ",「ハロウィン」シリーズ,"「Trick」&
+「Treat」シリーズ",,,「宝石」シリーズ,「宝石」シリーズ,「湯けむり」シリーズ,「X'mas」シリーズ,「X'mas」シリーズ,"2_wEi
+「クリスマス」シリーズ",「White X'mas」シリーズ,「White X'mas」シリーズ,"2_wEi「HAPPY X'MAS」&
+B.A.C「Noel」シリーズ",「X'mas デート」シリーズ,「冬 デート」シリーズ
+Banner Text (en),"""Shrine Maiden"" Series","""New Year's Greetings"" &
+""Hatsumoude"" Series","""Happy New Year"" Series","""Start of the Year"" Series","""New Year's Day"" Series",,,"""Winter Camping"" Series","""Setsubun"" Series","8/pLanet!! & B.A.C
+""Valentine's"" Series","8/pLanet!! & 2_wEi
+""Valentine's"" Series","""First Love"" Series","B.A.C
+""Innocence"" Series","""Dolls Day"" Series","""Precious"" Series","""Precious"" Series","""Wedding"" Series","""Chinese"" &
+""Wedding"" Series","""Easter"" Series",,"""Dreamland"" Series","8/pLanet!! ""Taking Shelter""
+& 2_wEi ""Rainy Season"" Series","""Magician"" Series
+& ""Circus"" Hinata","""Pajamas"" Series","""Cooking"" Series","""White Coat"" Series","""Fairy"" Series","""Fairy"" Ayame &
+""Mermaid"" Hotaru",,"""Summer Vacation"" Series","8/pLanet!! ""Summer Break"" &
+2_wEi ""Summer Leisure"" Series","""Yukata"" Series","8/pLanet!! ""Tanabata"" &
+2_wEi ""Yukata"" Series","""Midsummer Beach"" Series","2_wEi & Kanade
+""Swimsuit"" Series","""MARINE"" &
+""Pirates"" Series","B.A.C
+""Swimsuit"" Series","""Nighttime Pool"" Series","""Mermaid"" Series",,"""Knitting"" Series","""Police"" Series","2_wEi
+""Autumn"" Series","""Athletics Festival"" Series","Kanade
+""Idol"" & ""Maid""","""Nurse"" Series","""Nurse"" Series","""Angel"" &
+""Devil"" Series","""Angel"" &
+""Devil"" Series","2_wEi ""Horror"" &
+B.A.C ""Spooky Night"" Series","""Halloween"" Series","""Trick"" &
+""Treat"" Series",,,"""Gemstones"" Series","""Gemstones"" Series","""Hot Spring"" Series","""X'mas"" Series","""X'mas"" Series","2_wEi
+""Christmas"" Series","""White X'mas"" Series","""White X'mas"" Series","2_wEi ""HAPPY X'MAS"" &
+B.A.C ""Noel"" Series","""X'mas Date"" Series","""Winter Date"" Series"
+Banner BG,bg86,bg86,bg86,bg86,bg86,,,bg128,bg200,bg_live_16,bg_live_16,bg_live_16,bg128,bg170,bg_live_1,bg_live_1,bg_live_10,bg140,bg242,,bg128,bg145,bg151,bg4,bg94,bg_live_11,bg_live_9,bg_live_9,,bg46,bg130,bg88,bg79,bg46,bg46,bg68,bg46,bg188,bg66,,bg9,bg206,bg85,bg191,bg204,bg215,bg215,bg152/bg153,bg152/bg153,bg116,bg103,bg155,,,bg138,bg138,bg110,bg_live_15,bg_live_15,bg_live_48,bg51,bg51,bg102,bg172,bg23
+UR Description Text (ja),【巫女さん】ひなた、鈴音、彩芽、ほたる,"【迎春】杏梨、メイ
+【初詣】月、ゆきな",【謹賀新年】ひなた、鈴音、月,【ゆく年くる年】ゆきな、ほたる、メイ,【お正月】彩芽、杏梨,,,【冬キャンプ】ひなた、鈴音、月、彩芽、杏梨,【節分】ひなた、鈴音,【バレンタイン】鈴音、ほたる、アモル、クゥエル、ベル,【バレンタイン】ひなた、杏梨、アルミ、ミント,【初恋】ひなた、鈴音、ほたる,【Innocence】アモル、クゥエル、ベル,【ひな祭り】ひなた、鈴音、ゆきな、ほたる,【Precious】月、彩芽、ほたる、メイ,【Precious】ひなた、鈴音、杏梨、ゆきな,【ウェディング】月、ほたる、メイ,"【中華】鈴音、月
+【ウェディング】ひなた、杏梨",【イースター】ゆきな、ほたる、メイ,,【夢の世界】彩芽、杏梨,"【雨宿り】ゆきな、ほたる、メイ
+【梅雨】アルミ、ミント","【マジシャン】月、メイ
+【サーカス】ひなた",【パジャマ】ひなた、杏梨、ゆきな、ほたる,【料理】ゆきな、メイ,【白衣】月、彩芽、杏梨、メイ,【妖精】ひなた、鈴音、ゆきな,"【妖精】彩芽
+【人魚】ほたる",,【サマーバカンス】ひなた、鈴音、月、ゆきな、ほたる、メイ,"【夏休み】彩芽、杏梨
+【夏のレジャー】アルミ、ミント",【浴衣】ひなた、鈴音、ゆきな、ほたる,"【七夕】月、ゆきな、メイ
+【浴衣】アルミ、ミント",【真夏の海】月、彩芽、杏梨、ほたる,【水着】かなで、アルミ、ミント,"【MARINE】鈴音、メイ
+【パイレーツ】月、ゆきな",【水着】アモル、クゥエル、ベル,【夜のプール】鈴音、ほたる,【人魚】ひなた、鈴音、月、彩芽、杏梨,,【編み物】彩芽、杏梨、ほたる,【ポリス】鈴音、彩芽、ゆきな、メイ,【オータム】アルミ、ミント,【体育祭】彩芽、杏梨、ほたる、メイ,"【アイドル】かなで
+【メイド】かなで",【ナース】ひなた、月、ゆきな、ほたる,【ナース】鈴音、彩芽、杏梨、メイ,"【天使】ひなた、月、ゆきな、ほたる
+【悪魔】ひなた、月、ゆきな、ほたる","【天使】鈴音、彩芽、杏梨、メイ
+【悪魔】鈴音、彩芽、杏梨、メイ","【ホラー】アルミ、ミント
+【Spooky Night】アモル、クゥエル、ベル",【ハロウィン】杏梨、ゆきな、ほたる、メイ,"【Treat】ひなた
+【Trick】月",,,【宝石】ひなた、鈴音、月、ゆきな,【宝石】彩芽、杏梨、ほたる、メイ,【湯けむり】ひなた、鈴音、月、彩芽,【X'mas】鈴音、月、ゆきな、ほたる,【X'mas】ひなた、彩芽、杏梨、メイ,【クリスマス】アルミ、ミント,【White X'mas】ひなた、鈴音、ほたる,【White X'mas】杏梨、ゆきな、メイ,"【HAPPY X'MAS】アルミ、ミント
+【Noel】アモル、クゥエル、ベル",【X'mas デート】鈴音、月、彩芽、ほたる,【冬 デート】ひなた、杏梨、ゆきな、メイ
+UR Description Text (en),"[Shrine Maiden] Hinata, Suzune, Ayame, Hotaru","[New Year's Greetings] Anri, Mei
+[Hatsumoude] Akari, Yukina","[Happy New Year] Hinata, Suzune, Akari","[Start of the Year] Yukina, Hotaru, Mei","[New Year's Day] Anri, Ayame",,,"[Winter Camping] Hinata, Suzune, Akari, Ayame, Anri","[Setsubun] Hinata, Suzune","[Valentine's] Suzune, Hotaru, Amor, Cwellan, Bellum","[Valentine's] Hinata, Anri, Alumi, Mint","[First Love] Hinata, Suzune, Hotaru","[Innocence] Amor, Cwellan, Bellum","[Dolls Day] Hinata, Suzune, Yukina, Hotaru","[Precious] Akari, Ayame, Hotaru, Mei","[Precious] Hinata, Suzune, Anri, Yukina","[Wedding] Akari, Hotaru, Mei","[Chinese] Suzune, Akari
+[Wedding] Hinata, Anri","[Easter] Yukina, Hotaru, Mei",,"[Dreamland] Ayame, Anri","[Taking Shelter] Yukina, Hotaru, Mei
+[Rainy Season] Alumi, Mint","[Magician] Akari, Mei
+[Circus] Hinata","[Pajamas] Hinata, Anri, Yukina, Hotaru","[Cooking] Yukina, Mei","[White Coat] Akari, Ayame, Anri, Mei","[Fairy] Hinata, Suzune, Yukina","[Fairy] Ayame
+[Mermaid] Hotaru",,"[Summer Vacation] Hinata, Suzune, Akari, Yukina, Hotaru, Mei","[Summer Break] Ayame, Anri
+[Summer Leisure] Alumi, Mint","[Yukata] Hinata, Suzune, Yukina, Hotaru","[Tanabata] Akari, Yukina, Mei
+[Yukata] Alumi, Mint","[Midsummer Beach] Akari, Ayame, Anri, Hotaru","[Swimsuit] Kanade, Alumi, Mint","[MARINE] Suzune, Mei
+[Pirates] Akari, Yukina","[Swimsuit] Amor, Cwellan, Bellum","[Nighttime Pool] Suzune, Hotaru","[Mermaid] Hinata, Suzune, Akari, Ayame, Anri",,"[Kintting] Ayame, Anri, Hotaru","[Police] Suzune, Ayame, Yukina, Mei","[Autumn] Alumi, Mint","[Athletics Festival] Ayame, Anri, Hotaru, Mei","[Idol] Kanade
+[Maid] Kanade","[Nurse] Hinata, Akari, Yukina, Hotaru","[Nurse] Suzune, Ayame, Anri, Mei","[Angel] Hinata, Akari, Yukina, Hotaru
+[Devil] Hinata, Akari, Yukina, Hotaru","[Angel] Suzune, Ayame, Anri, Mei
+[Devil] Suzune, Ayame, Anri, Mei","[Horror] Alumi, Mint
+[Spooky Night] Amor, Cwellan, Bellum","[Halloween] Anri, Yukina, Hotaru, Mei","[Treat] Hinata
+[Trick] Akari",,,"[Gemstones] Hinata, Suzune, Akari, Yukina","[Gemstones] Ayame, Anri, Hotaru, Mei","[Hot Spring] Hinata, Suzune, Akari, Ayame","[X'mas] Suzune, Akari, Yukina, Hotaru","[X'mas] Hinata, Ayame, Anri, Mei","[Christmas] Alumi, Mint","[White X'mas] Hinata, Suzune, Hotaru","[White X'mas] Anri, Yukina, Mei","[HAPPY X'MAS] Alumi, Mint
+[Noel] Amor, Cwellan, Bellum","[X'mas Date] Suzune, Akari, Ayame, Hotaru","[Winter Date] Hinata, Anri, Yukina, Mei"
+SR Description Text (ja),,,,,,,,,,【バレンタイン】月、彩芽,【バレンタイン】ゆきな、メイ,,,,,,,"【中華】ほたる、メイ
+【ウェディング】彩芽、ゆきな",,,,,【マジシャン】ひなた、ほたる,【パジャマ】鈴音、月、彩芽、メイ,,,,,,,【夏休み】鈴音、ゆきな,【浴衣】月、彩芽、杏梨、メイ,,,,"【MARINE】ひなた、彩芽
+【パイレーツ】杏梨、ほたる",,【夜のプール】ひなた、杏梨,,,,,,【体育祭】ひなた、鈴音、月、ゆきな,,,,,,,【ハロウィン】ひなた、鈴音、月、彩芽,"【Treat】杏梨
+【Trick】メイ",,,,,【湯けむり】杏梨、ゆきな、ほたる、メイ,,,,,,,,
+SR Description Text (en),,,,,,,,,,"[Valentine's] Akari, Ayame","[Valentine's] Yukina, Mei",,,,,,,"[Chinese] Hotaru, Mei
+[Wedding] Ayame, Yukina",,,,,"[Magician] Hinata, Hotaru","[Pajamas] Suzune, Akari, Ayame, Mei",,,,,,,"[Summer Break] Suzune, Yukina","[Yukata] Akari, Ayame, Anri, Mei",,,,"[MARINE] Hinata, Ayame
+[Pirates] Anri, Hotaru",,"[Nighttime Pool] Hinata, Anri",,,,,,"[Athletics Festival] Hinata, Suzune, Akari, Yukina",,,,,,,"[Halloween] Hinata, Suzune, Akari, Ayame","[Treat] Anri
+[Trick] Mei",,,,,"[Hot Spring] Anri, Yukina, Hotaru, Mei",,,,,,,,
+Hinata,UR 755,,UR 248,,,,,UR 765,UR 557,,UR 269,UR 810,,UR 450,,UR 577,,UR 331,,,,,"SR 375, UR 606",UR 368,,,UR 133,,,UR 789,,UR 166,,,,SR 139,,SR 508,UR 351,,,,,SR 783,,UR 635,,"UR 448, UR 449",,,SR 190,UR 384,,,UR 614,,UR 218,,UR 236,,UR 639,,,,UR 431
+Suzune,UR 757,,UR 249,,,,,UR 766,UR 558,UR 261,,UR 811,,UR 451,,UR 583,,UR 323,,,,,,SR 370,,,UR 134,,,UR 790,SR 152,UR 359,,,,UR 141,,UR 510,UR 352,,,UR 669,,SR 784,,,UR 616,,"UR 380, UR 381",,SR 194,,,,UR 615,,UR 214,UR 227,,,UR 640,,,UR 418,
+Akari,,UR 806,UR 250,,,,,UR 767,,SR 263,,,,,UR 578,,UR 121,UR 324,,,,,UR 373,SR 365,,UR 461,,,,UR 791,,SR 164,UR 785,UR 610,,UR 148,,,UR 353,,,,,SR 531,,UR 636,,"UR 495, UR 496",,,SR 195,UR 385,,,UR 631,,UR 215,UR 228,,,,,,UR 419,
+Ayame,UR 758,,,,UR 255,,,UR 750,,SR 264,,,,,UR 579,,,SR 333,,,UR 572,,,SR 366,,UR 462,,UR 661,,,UR 154,SR 361,,UR 355,,SR 140,,,UR 136,,UR 796,UR 670,,UR 529,,,UR 619,,"UR 424, UR 425",,SR 191,,,,,UR 714,UR 219,,UR 237,,,,,UR 420,
+Anri,,UR 804,,,UR 256,,,UR 751,,,UR 270,,,,,UR 584,,UR 332,,,UR 573,,,UR 363,,UR 463,,,,,UR 155,SR 362,,UR 356,,SR 146,,SR 509,UR 137,,UR 797,,,UR 781,,,UR 620,,"UR 400, UR 401",,UR 192,SR 386,,,,UR 715,SR 216,,UR 238,,,UR 752,,,UR 432
+Yukina,,UR 807,,UR 242,,,,,,,SR 271,,,UR 452,,UR 585,,SR 334,UR 768,,,UR 341,,UR 369,UR 560,,UR 135,,,UR 727,SR 153,UR 360,UR 786,,,UR 149,,,,,,UR 671,,SR 532,,UR 637,,"UR 471, UR 472",,,UR 193,,,,UR 632,,SR 217,UR 229,,,,UR 753,,,UR 433
+Hotaru,UR 756,,,UR 243,,,,,,UR 262,,UR 812,,UR 453,UR 586,,UR 122,SR 325,UR 769,,,UR 342,SR 376,UR 364,,,,UR 662,,UR 728,,UR 167,,UR 611,,SR 147,,UR 511,,,UR 798,,,UR 782,,UR 638,,"UR 499, UR 500",,,UR 196,,,,,UR 817,SR 220,UR 230,,,UR 641,,,UR 421,
+Mei,,UR 805,,UR 244,,,,,,,SR 272,,,,UR 580,,UR 123,SR 326,UR 770,,,UR 343,UR 374,SR 371,UR 561,UR 464,,,,UR 729,,SR 165,UR 787,,,UR 142,,,,,,UR 672,,UR 530,,,UR 617,,"UR 437, UR 438",,UR 197,SR 387,,,,UR 818,SR 221,,UR 239,,,UR 754,,,UR 434
+Kanade,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,UR 605,,,,,,,,,,"UR 571, UR 574",,,,,,,,,,,,,,,,,,,,
+Alumi,,,,,,,,,,,UR 562,,,,,,,,,,,UR 599,,,,,,,,,UR 504,,UR 739,,UR 698,,,,,,,,UR 628,,,,,,,UR 793,,,,,,,,,,UR 552,,,UR 799,,
+Mint,,,,,,,,,,,UR 563,,,,,,,,,,,UR 600,,,,,,,,,UR 505,,UR 740,,UR 699,,,,,,,,UR 629,,,,,,,UR 794,,,,,,,,,,UR 553,,,UR 800,,
+Amor,,,,,,,,,,UR 761,,,UR 814,,,,,,,,,,,,,,,,,,,,,,,,UR 703,,,,,,,,,,,,,UR 741,,,,,,,,,,,,,UR 801,,
+Cwellan,,,,,,,,,,UR 762,,,UR 815,,,,,,,,,,,,,,,,,,,,,,,,UR 704,,,,,,,,,,,,,UR 742,,,,,,,,,,,,,UR 802,,
+Bellum,,,,,,,,,,UR 763,,,UR 816,,,,,,,,,,,,,,,,,,,,,,,,UR 705,,,,,,,,,,,,,UR 743,,,,,,,,,,,,,UR 803,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,Spring,,,,,,,,,,,,,Summer,,,,,,,,,,,,,Autumn,,,,,,,,,,,,,,,,,,Winter,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,New Year,,,,,,,,Setsubun,Valentines,,,,Hinamatsuri,,,,,Easter,,,,,,,,,,,,,,,,,,,,,,,,,Sports Day,,Halloween,,,,,,,,,,,,Christmas,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"(Actually early october, but giving Halloween priority)",,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Note: long second line of in-game text,,,,,,,,,,,,,,,,,"Note: custom BG combining both angel and devil ones
+(angel on left half, devil on right)
+because a single BG didn't fit both themes well",,,,,,,,,,,,,,,,,

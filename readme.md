@@ -3,14 +3,17 @@ Resource modifications for 8 beat Story♪ to enhance QoL for playing on custom 
 
 
 ## Setup
-1. Install Python 3.12+ and pycryptodome package (can be installed in venv)
-2. Copy resource .zip files to `res` directory, e.g. `res/729/1_bg.zip`, ...
+1. Install Python 3.12+ and all requirements (`pip install -r requirements.txt`).
+    - Can be installed in a venv.
+2. Optionally, install imagequant (`pip install imagequant`), for higher quality image
+   generation.
+3. Copy resource .zip files to `res` directory, e.g. `res/729/1_bg.zip`, ...
     - You can use Android or iOS resources. The only difference seems to be a few
       old/unused files leftover in the iOS version.
-3. Copy `tutorial_2.zip` to `tutorial` directory.
-4. Copy the game's Android .apk file (version 2.3.15) to the `apk` directory, rename
+4. Copy `tutorial_2.zip` to `tutorial` directory.
+5. Copy the game's Android .apk file (version 2.3.15) to the `apk` directory, rename
    it to `game.apk`.
-5. Copy your `server-public-key.pem` and `server-private-key.pem` to `keys` directory
+6. Copy your `server-public-key.pem` and `server-private-key.pem` to `keys` directory
     - Also copy source's public key as `server-public-key-orig.pem` if you'd like to
       re-encrypt files from old key to new key.
 
@@ -38,6 +41,30 @@ Usage: `python gen_delta_update.py <resource_path> <ver_old> <ver_new>`
 Used to generate an incremental ("delta") update containing the changes between two
 versions.
 Changes are written into `<ver_old + 1>.zip`, located in the new version's directory.
+
+### gen\_gacha\_birthday\_stepup.py
+Usage: `python gen_gacha_birthday_stepup.py <resource_path> <ver> <start_year> <end_year>`
+
+Generate birthday gacha banners in step-up gacha, lasting until the end of `end_year`.
+The banners contain:
+ - Only the birthday girl's cards for SR and UR rarities (including event cards)
+ - Birthday cards as pickup cards (where available), otherwise all of the birthday girl's
+     UR cards
+ - Same cards as the regular yearly rotation for R rarity
+
+Warning: always use the same `start_year`, because step-up gacha IDs must not change.
+
+### gen\_gacha\_rotation.py
+Usage: `python gen_gacha_rotation.py <resource_path> <ver> <start_year> <end_year>`
+
+Generates a yearly premium gacha rotation, based on spreadsheet (csv) data, lasting until
+the end of `end_year`.
+Consists of:
+ - A permanent lineup that is always available
+ - A list of limited series, which occur at a given ISO week numbers
+ - Limited cards are available in gacha alongside the permanent lineup
+
+Also outputs a markdown schedule and image assets to `gacha_md` directory.
 
 ### make\_eternal\_exchange\_event.py
 Usage: `python make_eternal_exchange_event.py <resource_path> <ver>`
@@ -108,6 +135,18 @@ can obtain event cards and rewards.
 1. `python new_ver.py res 731 732`
 2. `python make_eternal_exchange_event.py res 732`
 3. `python gen_delta_update.py res 731 732`
+
+### 733
+Version 733 is recommended to setup gacha (premium gacha rotation and birthday stepup
+gacha).
+
+The ending year is set to 2031 to reduce the size/length of data (improves loading times).
+After 2031, it will be possible to add new gacha data (and remove the old data).
+
+1. `python new_ver.py res 732 733`
+2. `python gen_gacha_rotation.py res 733 2026 2031`
+3. `python gen_gacha_birthday_stepup.py res 733 2026 2031`
+4. `python gen_delta_update.py res 732 733`
 
 ### Cleanup
 You can cleanup the large full version files for older updates that are no longer needed.

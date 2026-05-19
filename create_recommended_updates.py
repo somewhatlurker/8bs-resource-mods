@@ -130,6 +130,29 @@ def upd_732():
     gen_delta_update(RESOURCE_PATH, 731, 732)
 
 
+def upd_733():
+    """Creates update 733, based on 732.
+
+    Version 732 sets up gacha (premium gacha rotation and birthday stepup gacha).
+    """
+    from gen_delta_update import gen_delta_update
+    from gen_gacha_birthday_stepup import gen_gacha_birthday_stepup
+    from gen_gacha_rotation import gen_gacha_rotation
+    from new_ver import new_ver
+
+    # 1. `python new_ver.py res 732 733`
+    new_ver(RESOURCE_PATH, 732, 733)
+
+    # 2. `python gen_gacha_rotation.py res 733 2026 2031`
+    gen_gacha_rotation(RESOURCE_PATH, 733, 2026, 2031)
+
+    # 3. `python gen_gacha_birthday_stepup.py res 733 2026 2031`
+    gen_gacha_birthday_stepup(RESOURCE_PATH, 733, 2026, 2031)
+
+    # 4. `python gen_delta_update.py res 732 733`
+    gen_delta_update(RESOURCE_PATH, 732, 733)
+
+
 def cleanup():
     """Cleans up after completion.
 
@@ -164,6 +187,7 @@ if __name__ == '__main__':
         (730, upd_730),
         (731, upd_731),
         (732, upd_732),
+        (733, upd_733),
     ]
 
     for ver, fn in resource_updates:
