@@ -358,6 +358,8 @@ def gen_loginbonus_image(
     for i, image in enumerate(card_images):
         if len(card_images) == 1:
             x = int((cards_image.width * 1.04 - image.width) * 0.67)
+        elif len(card_images) == 2:
+            x = int((cards_image.width * 1.04 - image.width) * (0.2 + i / (len(card_images) - 1) * 0.8))
         else:
             x = int((cards_image.width * 1.04 - image.width) * i / (len(card_images) - 1))
         # x = int(cards_image.width * 1.04) - image.width - x + int(image.width * 0.04)  # right to left
