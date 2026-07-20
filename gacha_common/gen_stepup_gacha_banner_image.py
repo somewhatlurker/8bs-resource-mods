@@ -365,9 +365,12 @@ def gen_stepup_gacha_banner_image(
                             (0, 0, 0, 0))
 
     for i, image in enumerate(card_images):
-        x = int((cards_image.width - image.width) * i / (len(card_images) - 1))
+        if len(card_images) == 1:
+            x = (cards_image.width - image.width) // 2
+        else:
+            x = int((cards_image.width - image.width) * i / (len(card_images) - 1))
         x = cards_image.width - image.width - x  # right to left
-        cards_image.alpha_composite(card_images[i], (x, 0))
+        cards_image.alpha_composite(image, (x, 0))
     banner_image.alpha_composite(
         cards_image,
         ((banner_image.width - cards_image.width) // 2, 0)
