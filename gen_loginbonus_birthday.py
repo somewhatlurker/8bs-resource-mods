@@ -260,7 +260,7 @@ def _master_login_event_row(info_dict: dict, login_event_id: int, year: int) -> 
         'END_MINUTE': 0
     }
 
-def _master_login_event_detail(info_dict: dict) -> dict:
+def _master_login_event_detail(info_dict: dict) -> List[dict]:
     bg = f'login_event{info_dict["FIRST_ID"]}.png'
     message = f'Happy Birthday {info_dict["CHARA_NAME_SHORT_JA"]}！'
 
