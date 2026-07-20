@@ -343,6 +343,7 @@ def gen_loginbonus_birthday(resource_path, ver, start_year, end_year):
         info_dict['FIRST_ID'] = first_login_event_id
         info_dict['EVENT_DETAIL'] = _master_login_event_detail(info_dict)
         info_dict['IMAGE'] = _gen_bg_image(info_dict, resource_path, ver)
+        info_dict['IMAGE'] = image_quantize(info_dict['IMAGE'])
         first_login_event_id += 1
 
     master_login_event_rows = []

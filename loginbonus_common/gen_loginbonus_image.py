@@ -357,11 +357,11 @@ def gen_loginbonus_image(
 
     for i, image in enumerate(card_images):
         if len(card_images) == 1:
-            x = int((cards_image.width - image.width) * 0.65)
+            x = int((cards_image.width * 1.04 - image.width) * 0.67)
         else:
-            x = int((cards_image.width - image.width) * i / (len(card_images) - 1))
-        # x = cards_image.width - image.width - int(x * 0.95) + int(image.width * 0.1)  # right to left
-        x = int(x * 1.05) + int(image.width * 0.05)  # left to right
+            x = int((cards_image.width * 1.04 - image.width) * i / (len(card_images) - 1))
+        # x = int(cards_image.width * 1.04) - image.width - x + int(image.width * 0.04)  # right to left
+        x = x + int(image.width * 0.04)  # left to right
         cards_image.alpha_composite(image, (x, 0))
     loginbonus_image.alpha_composite(
         cards_image,
@@ -399,7 +399,7 @@ def gen_loginbonus_image(
                (IMAGE_SIZE[1] - IMAGE_SAFE_AREA_MARGINS[1] - pos[1] - 94 // 2))
         loginbonus_image.alpha_composite(image, pos)
         quantity_image = _gen_itemquantity_text_image(reward_quantities[i])
-        quantity_pos = ((pos[0] + 102 - quantity_image.width),
+        quantity_pos = ((pos[0] + 103 - quantity_image.width),
                         (pos[1] + 96 - quantity_image.height))
         loginbonus_image.alpha_composite(quantity_image, quantity_pos)
 
