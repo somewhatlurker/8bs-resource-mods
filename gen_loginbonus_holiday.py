@@ -330,7 +330,7 @@ def _gen_schedule_html_table(
         rewards_cell = indent*2 + rewards_cell + '\n'
 
         image_path = HTML_BANNER_IMAGE_PATH.format(id=info_dict['FIRST_ID'])
-        image_tag = f'<img src="{image_path}" width=240 height=80 />'
+        image_tag = f'<img src="{image_path}" width=190 height=107 />'
         image_tag = indent*3 + image_tag + '\n'
         image_cell = indent*2 + '<td>\n' + image_tag + indent*2 + '</td>\n'
 
