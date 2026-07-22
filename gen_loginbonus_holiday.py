@@ -40,7 +40,16 @@ HOLIDAY_BONUS_INFO = [
         'BG_TITLE': 'HAPPY\nNEW YEAR', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 2, 14), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'DATE': date(1970, 2, 2), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
+        'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
+        'HOLIDAY_NAME_JA': '節分', 'HOLIDAY_NAME_EN': 'Setsubun',
+        'EVENT_NAME_JA': 'Setsubun', 'EVENT_NAME_EN': 'Setsubun',
+        'BG': 'bg200', 'IMAGE_CARDS': (557, 558),  # Hinata, Suzune
+        'BG_TITLE': 'SETSUBUN', 'BG_SHOW_SUBTITLE': False
+    },
+    {
+        'DATE': date(1970, 2, 13), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
         'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
         'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
         'HOLIDAY_NAME_JA': 'バレンタイン', 'HOLIDAY_NAME_EN': 'Valentine\'s Day',
@@ -49,7 +58,16 @@ HOLIDAY_BONUS_INFO = [
         'BG_TITLE': 'HAPPY\nVALENTINE\'S', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 3, 3), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'DATE': date(1970, 3, 1), 'DURATION_DAYS': 31,
+        'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
+        'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
+        'HOLIDAY_NAME_JA': '春', 'HOLIDAY_NAME_EN': 'Spring',
+        'EVENT_NAME_JA': '春ボーナス', 'EVENT_NAME_EN': 'Spring Bonus',
+        'BG': 'bg144', 'IMAGE_CARDS': (342, 343),  # Hotaru, Mei
+        'BG_TITLE': 'SPRING', 'BG_SHOW_SUBTITLE': False
+    },
+    {
+        'DATE': date(1970, 3, 2), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
         'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
         'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
         'HOLIDAY_NAME_JA': 'ひな祭り', 'HOLIDAY_NAME_EN': 'Dolls Day',
@@ -67,34 +85,52 @@ HOLIDAY_BONUS_INFO = [
         'BG_TITLE': 'HAPPY\nEASTER', 'BG_SHOW_SUBTITLE': False  # definitely don't show because date changes
     },
     {
-        'DATE': date(1970, 4, 29), 'DURATION_DAYS': 5,
+        'DATE': date(1970, 4, 29), 'DURATION_DAYS': 7,
         'JEWEL_DAYS': 5,
         'JEWEL_AMOUNTS': [15] * 5,
         'HOLIDAY_NAME_JA': ' ゴールデンウィーク', 'HOLIDAY_NAME_EN': 'Golden Week',
         'EVENT_NAME_JA': 'GoldenWeek', 'EVENT_NAME_EN': 'Golden Week',
-        'BG': 'bg128', 'IMAGE_CARDS': (572, 573),  # Ayame, Anri (Dreamland, because no good GW cards lol)
+        'BG': 'bg128', 'IMAGE_CARDS': (572, 573),  # Ayame, Anri (Dreamland, because no good GW cards? lol)
         'BG_TITLE': 'GOLDEN\nWEEK', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 6, 21), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'DATE': date(1970, 6, 1), 'DURATION_DAYS': 30,
         'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
         'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
         'HOLIDAY_NAME_JA': '夏', 'HOLIDAY_NAME_EN': 'Summer',
-        'EVENT_NAME_JA': 'さぁ夏だ歌おうよ', 'EVENT_NAME_EN': 'It\'s Summer!',
+        'EVENT_NAME_JA': '夏ボーナス', 'EVENT_NAME_EN': 'Summer Bonus',
         'BG': 'bg_live_52', 'IMAGE_CARDS': (507,),  # Yukina and Mei
         'BG_TITLE': 'SUMMER\nTIME', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 8, 1), 'DURATION_DAYS': 30,
+        'DATE': date(1970, 8, 1), 'DURATION_DAYS': 31,
         'JEWEL_DAYS': 8,
         'JEWEL_AMOUNTS': [10] * 7 + [18],
         'HOLIDAY_NAME_JA': 'エビストの月', 'HOLIDAY_NAME_EN': '8bs Month',
         'EVENT_NAME_JA': '8月はエビストの月', 'EVENT_NAME_EN': 'August is 8bs Month',
-        'BG': 'bg243', 'IMAGE_CARDS': (564, 668, 821),  # Alumi, Bellum, Akari
+        'BG': 'bg243', 'IMAGE_CARDS': (564, 819, 668),  # Alumi, Hinata, Bellum
         'BG_TITLE': '8BS\nMONTH', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 10, 31), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'DATE': date(1970, 8, 8), 'DURATION_DAYS': 1,
+        'JEWEL_DAYS': 1,
+        'JEWEL_AMOUNTS': [88],
+        'HOLIDAY_NAME_JA': 'エビストの日', 'HOLIDAY_NAME_EN': '8bs Day',
+        'EVENT_NAME_JA': '8月8日はエビストの日', 'EVENT_NAME_EN': 'August 8 is 8bs Day',
+        'BG': 'bg243', 'IMAGE_CARDS': (667, 565, 821),  # Cwellan, Mint, Akari
+        'BG_TITLE': '8BS\nDAY', 'BG_SHOW_SUBTITLE': False
+    },
+    {
+        'DATE': date(1970, 9, 1), 'DURATION_DAYS': 30,
+        'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
+        'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
+        'HOLIDAY_NAME_JA': '秋', 'HOLIDAY_NAME_EN': 'Autumn',
+        'EVENT_NAME_JA': '秋ボーナス', 'EVENT_NAME_EN': 'Autumn Bonus',
+        'BG': 'bg85', 'IMAGE_CARDS': (628, 629),  # Alumi, Mint
+        'BG_TITLE': 'AUTUMN', 'BG_SHOW_SUBTITLE': False
+    },
+    {
+        'DATE': date(1970, 10, 28), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
         'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
         'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
         'HOLIDAY_NAME_JA': 'ハロウィン', 'HOLIDAY_NAME_EN': 'Halloween',
@@ -103,12 +139,21 @@ HOLIDAY_BONUS_INFO = [
         'BG_TITLE': 'HAPPY\nHALLOWEEN', 'BG_SHOW_SUBTITLE': False
     },
     {
-        'DATE': date(1970, 12, 25), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
+        'DATE': date(1970, 12, 1), 'DURATION_DAYS': 31,
+        'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
+        'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
+        'HOLIDAY_NAME_JA': '冬', 'HOLIDAY_NAME_EN': 'Winter',
+        'EVENT_NAME_JA': '冬ボーナス', 'EVENT_NAME_EN': 'Winter Bonus',
+        'BG': 'bg128', 'IMAGE_CARDS': (750,),  # Ayame and Anri
+        'BG_TITLE': 'WINTER', 'BG_SHOW_SUBTITLE': False
+    },
+    {
+        'DATE': date(1970, 12, 23), 'DURATION_DAYS': DEFAULT_EVENT_DAYS,
         'JEWEL_DAYS': DEFAULT_EVENT_JEWEL_DAYS,
         'JEWEL_AMOUNTS': [DEFAULT_EVENT_JEWEL_AMOUNT] * DEFAULT_EVENT_JEWEL_DAYS,
         'HOLIDAY_NAME_JA': 'クリスマス', 'HOLIDAY_NAME_EN': 'Christmas',
         'EVENT_NAME_JA': 'MerryChristmas', 'EVENT_NAME_EN': 'Merry Christmas',
-        'BG': 'bg114', 'IMAGE_CARDS': (226,),  # Hinata and Suzune
+        'BG': 'bg_live_15', 'IMAGE_CARDS': (418, 419),  # Suzune, Akari
         'BG_TITLE': 'MERRY\nCHRISTMAS', 'BG_SHOW_SUBTITLE': False
     }
 ]
@@ -135,7 +180,7 @@ HTML_TABLE_STRINGS_JA = {
     'date': '日付',
     'date_format': '%m月%d日',
     'date_range_sep': '<wbr>〜<wbr>',
-    'n_days_after_easter': 'イースターで始まる{n}日',
+    'n_days_starting_day_before_easter': 'イースターの前日で始まる{n}日',
     'holiday': '祝日',
     'rewards': '報酬',
     'day_number_d': 'ログイン{d}回目',
@@ -145,7 +190,7 @@ HTML_TABLE_STRINGS_EN = {
     'date': 'Date',
     'date_format': '%m/%d',
     'date_range_sep': '<wbr>〜<wbr>',
-    'n_days_after_easter': '{n} days starting on Easter',
+    'n_days_starting_day_before_easter': '{n} days starting the day before Easter',
     'holiday': 'Holiday',
     'rewards': 'Rewards',
     'day_number_d': 'Login {d}',
@@ -192,7 +237,7 @@ def _event_start_date(info_dict: dict, year: int) -> date:
     start_date = info_dict['DATE']
     if isinstance(start_date, str):
         if start_date.lower() == 'easter':
-            return EASTER_DATES[year]
+            return EASTER_DATES[year] - timedelta(days=1)  # day before easter
 
     return start_date.replace(year=year)
 
@@ -251,7 +296,7 @@ def _gen_schedule_html_table(
 
         start_date = info_dict['DATE']
         if isinstance(start_date, str) and start_date.lower() == 'easter':
-            date_str = strings.get('n_days_after_easter').format(n=info_dict['DURATION_DAYS'])
+            date_str = strings.get('n_days_starting_day_before_easter').format(n=info_dict['DURATION_DAYS'])
         else:
             start_date = _event_start_date(info_dict, 1970)
             end_date = start_date + timedelta(days=info_dict['DURATION_DAYS'] - 1)
@@ -286,7 +331,7 @@ def _gen_schedule_html_table(
 
 def _gen_markdown_page_en(info_dicts: List[dict]) -> str:
     output = '# Holiday Login Bonuses\n\n'
-    output += 'Login during the holiday dates to earn lots of core jewels!\n\n'
+    output += 'Login during the holiday date periods to earn lots of core jewels!\n\n'
 
     output += _gen_schedule_html_table(info_dicts, HTML_TABLE_STRINGS_EN, 'HOLIDAY_NAME_EN')
 
