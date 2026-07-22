@@ -297,7 +297,7 @@ def _filter_stand_bg_rings(image: Image.Image) -> Image.Image:
         for y in range(image.height):
             colour = pixels[x, y]
             alpha = colour[3]
-            alpha = alpha * 2 - 127
+            alpha = round(alpha * 2.1 - 150)
             alpha = max(alpha, 0)
             alpha = min(alpha, 255)
             colour = colour[0:3] + (alpha,)
@@ -364,7 +364,15 @@ def gen_stepup_gacha_banner_image(
     cards_image = Image.new('RGBA', (BANNER_BG_SIZE[0], BANNER_BG_SIZE[1] + BANNER_BG_Y),
                             (0, 0, 0, 0))
 
-    for i, image in enumerate(card_images):
+    # hack to draw index 1 and/or 2 last
+    if len(card_images) == 3:
+        order = [0, 2, 1]
+    elif len(card_images) == 4:
+        order = [0, 3, 1, 2]
+    else:
+        order = list(range(len(card_images)))
+    for i in order:
+        image = card_images[i]
         if len(card_images) == 1:
             x = (cards_image.width - image.width) // 2
         else:

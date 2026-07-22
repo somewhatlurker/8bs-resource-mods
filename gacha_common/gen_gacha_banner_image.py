@@ -360,7 +360,7 @@ def _filter_stand_bg_rings(image: Image.Image) -> Image.Image:
         for y in range(image.height):
             colour = pixels[x, y]
             alpha = colour[3]
-            alpha = alpha * 2 - 127
+            alpha = round(alpha * 2.1 - 150)
             alpha = max(alpha, 0)
             alpha = min(alpha, 255)
             colour = colour[0:3] + (alpha,)

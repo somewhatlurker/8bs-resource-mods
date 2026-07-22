@@ -275,7 +275,7 @@ def _filter_stand_bg_rings(image: Image.Image) -> Image.Image:
         for y in range(image.height):
             colour = pixels[x, y]
             alpha = colour[3]
-            alpha = alpha * 2 - 127
+            alpha = round(alpha * 2.1 - 150)
             alpha = max(alpha, 0)
             alpha = min(alpha, 255)
             colour = colour[0:3] + (alpha,)
@@ -345,7 +345,7 @@ def gen_loginbonus_image(
         image = image.convert('RGBA')
         scale_width = cards_image.height
         if len(card_images) <= 1:
-            scale_width = int(scale_width * 1.15)
+            scale_width = int(scale_width * 1.1)
         elif len(card_images) <= 2:
             scale_width = int(scale_width * 1.0)
         else:
@@ -355,11 +355,19 @@ def gen_loginbonus_image(
         image = _filter_stand_bg_rings(image)
         card_images[i] = image
 
-    for i, image in enumerate(card_images):
+    # hack to draw index 1 and/or 2 last
+    if len(card_images) == 3:
+        order = [0, 2, 1]
+    elif len(card_images) == 4:
+        order = [0, 3, 1, 2]
+    else:
+        order = list(range(len(card_images)))
+    for i in order:
+        image = card_images[i]
         if len(card_images) == 1:
-            x = int((cards_image.width * 1.04 - image.width) * 0.67)
+            x = int((cards_image.width * 1.04 - image.width) * 0.7)
         elif len(card_images) == 2:
-            x = int((cards_image.width * 1.04 - image.width) * (0.2 + i / (len(card_images) - 1) * 0.8))
+            x = int((cards_image.width * 1.04 - image.width) * (0.15 + i / (len(card_images) - 1) * 0.75))
         else:
             x = int((cards_image.width * 1.04 - image.width) * i / (len(card_images) - 1))
         # x = int(cards_image.width * 1.04) - image.width - x + int(image.width * 0.04)  # right to left
