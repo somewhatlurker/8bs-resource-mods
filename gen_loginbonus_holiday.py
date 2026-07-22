@@ -10,7 +10,9 @@ from typing import Dict, List
 
 from PIL import Image
 
-from loginbonus_common.gen_loginbonus_image import gen_loginbonus_image
+from loginbonus_common.gen_loginbonus_image import IMAGE_SAFE_AREA_SIZE, \
+                                                   IMAGE_SAFE_AREA_MARGINS, \
+                                                   gen_loginbonus_image
 from util import encrypt_replacements_json, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
 
@@ -183,6 +185,7 @@ HTML_TABLE_STRINGS_JA = {
     'n_days_starting_day_before_easter': 'イースターの前日で始まる{n}日',
     'holiday': '祝日',
     'rewards': '報酬',
+    'image': '画像',
     'day_number_d': 'ログイン{d}回目',
     'n_jewels': 'コアジュエル{n}個'
 }
@@ -193,6 +196,7 @@ HTML_TABLE_STRINGS_EN = {
     'n_days_starting_day_before_easter': '{n} days starting the day before Easter',
     'holiday': 'Holiday',
     'rewards': 'Rewards',
+    'image': 'Image',
     'day_number_d': 'Login {d}',
     'n_jewels': '{n} core jewels'
 }
@@ -208,6 +212,9 @@ HTML_TABLE_STYLE = '''<style>
         padding: 0.05em 0.25em;
     }
 </style>'''
+
+HTML_BANNER_IMAGE_PATH = '/static/loginbonus/login_event{id}.png'
+
 
 def _gen_bg_image(
         info_dict: dict,
@@ -289,6 +296,7 @@ def _gen_schedule_html_table(
     output += indent*2 + f'<th>{strings.get("date")}</th>\n'
     output += indent*2 + f'<th>{strings.get("holiday")}</th>\n'
     output += indent*2 + f'<th>{strings.get("rewards")}</th>\n'
+    output += indent*2 + f'<th>{strings.get("image")}</th>\n'
     output += indent + '</tr>\n'
 
     for info_dict in info_dicts:
@@ -321,9 +329,15 @@ def _gen_schedule_html_table(
         rewards_cell = f'<td>{rewards_text}</td>'
         rewards_cell = indent*2 + rewards_cell + '\n'
 
+        image_path = HTML_BANNER_IMAGE_PATH.format(id=info_dict['FIRST_ID'])
+        image_tag = f'<img src="{image_path}" width=240 height=80 />'
+        image_tag = indent*3 + image_tag + '\n'
+        image_cell = indent*2 + '<td>\n' + image_tag + indent*2 + '</td>\n'
+
         output += date_cell
         output += holiday_cell
         output += rewards_cell
+        output += image_cell
         output += indent + '</tr>\n'
 
     output += '</table>'
@@ -377,13 +391,27 @@ def gen_loginbonus_holiday(resource_path, ver, start_year, end_year):
     # print(master_login_event_rows)
 
 
-    # output markdown pages
+    # output markdown pages and web images
     md_en = _gen_markdown_page_en(info_dicts)
     with open(f'loginbonus_md/holiday.md', 'w', encoding='utf-8') as f:
         f.write(md_en)
     md_ja = _gen_markdown_page_ja(info_dicts)
     with open(f'loginbonus_md/holiday_ja.md', 'w', encoding='utf-8') as f:
         f.write(md_ja)
+
+    for info_dict in info_dicts:
+        first_id = info_dict['FIRST_ID']
+        # crop to safe area (to minimize wasted space in resized image)
+        image = info_dict['IMAGE'].crop((
+            IMAGE_SAFE_AREA_MARGINS[0],
+            IMAGE_SAFE_AREA_MARGINS[1],
+            IMAGE_SAFE_AREA_MARGINS[0] + IMAGE_SAFE_AREA_SIZE[0],
+            IMAGE_SAFE_AREA_MARGINS[1] + IMAGE_SAFE_AREA_SIZE[1]
+        ))
+        # resize because no need for such large images on web
+        image = image.convert('RGBA').resize((380, 214))
+        image = image_quantize(image)
+        image.save(f'loginbonus_md/static/loginbonus/login_event{first_id}.png')
 
 
     # add event detail sheets
