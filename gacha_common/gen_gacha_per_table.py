@@ -142,8 +142,9 @@ def gen_gacha_stepup_per_table(
         # print(f'PER_TOTAL < LCM!!!, {per_total}, {lcm}')
         diff = per_total - sum(e['per_int'] for e in table)
         # note: shuffle cards so bias isn't introduced sequentially at start
+        rd = random.Random(len(limited_gacha_data_dict.get('CARDS', [])))
         highest_errs = sorted(
-            random.sample(table, k=len(table)),
+            rd.sample(table, k=len(table)),
             key=lambda x: x['per_err'],
             reverse=True
         )[:diff]
