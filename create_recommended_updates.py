@@ -153,6 +153,29 @@ def upd_733():
     gen_delta_update(RESOURCE_PATH, 732, 733)
 
 
+def upd_734():
+    """Creates update 734, based on 733.
+
+    Version 734 sets up login bonuses (birthdays and holidays).
+    """
+    from gen_delta_update import gen_delta_update
+    from gen_loginbonus_birthday import gen_loginbonus_birthday
+    from gen_loginbonus_holiday import gen_loginbonus_holiday
+    from new_ver import new_ver
+
+    # 1. `python new_ver.py res 733 734`
+    new_ver(RESOURCE_PATH, 733, 734)
+
+    # 2. `python gen_loginbonus_birthday.py res 734 2026 2031`
+    gen_loginbonus_birthday(RESOURCE_PATH, 734, 2026, 2031)
+
+    # 3. `python gen_loginbonus_holiday.py res 734 2026 2031`
+    gen_loginbonus_holiday(RESOURCE_PATH, 734, 2026, 2031)
+
+    # 4. `python gen_delta_update.py res 733 734`
+    gen_delta_update(RESOURCE_PATH, 733, 734)
+
+
 def cleanup():
     """Cleans up after completion.
 
@@ -188,6 +211,7 @@ if __name__ == '__main__':
         (731, upd_731),
         (732, upd_732),
         (733, upd_733),
+        (734, upd_734),
     ]
 
     for ver, fn in resource_updates:

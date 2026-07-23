@@ -1,6 +1,10 @@
 # 8bs Resource Mods
 Resource modifications for 8 beat Story♪ to enhance QoL for playing on custom servers.
 
+Note: the code in this repo is not meant to be neat.
+It's only for the sake of transparency and repeatability, plus exploration.
+If it works, it's good enough.
+
 
 ## Setup
 1. Install Python 3.12+ and all requirements (`pip install -r requirements.txt`).
@@ -65,6 +69,23 @@ Consists of:
  - Limited cards are available in gacha alongside the permanent lineup
 
 Also outputs a markdown schedule and image assets to `gacha_md` directory.
+
+### gen\_loginbonus\_birthday.py
+Usage: `python gen_loginbonus_birthday.py <resource_path> <ver> <start_year> <end_year>`
+
+Generates character birthday login bonuses, for each year until the end of `end_year`.
+Rewards:
+ - 5 days x 10 jewels/day
+
+Also outputs a markdown schedule and image assets to `loginbonus_md` directory.
+
+### gen\_loginbonus\_holiday.py
+Usage: `python gen_loginbonus_holiday.py <resource_path> <ver> <start_year> <end_year>`
+
+Generates holiday/event login bonuses, for each year until the end of `end_year`.
+Rewards very depending on the holiday -- check the code or generated assets for details.
+
+Also outputs a markdown schedule and image assets to `loginbonus_md` directory.
 
 ### make\_eternal\_exchange\_event.py
 Usage: `python make_eternal_exchange_event.py <resource_path> <ver>`
@@ -147,6 +168,17 @@ After 2031, it will be possible to add new gacha data (and remove the old data).
 2. `python gen_gacha_rotation.py res 733 2026 2031`
 3. `python gen_gacha_birthday_stepup.py res 733 2026 2031`
 4. `python gen_delta_update.py res 732 733`
+
+### 734
+Version 734 is recommended to setup login bonuses (birthdays and holidays).
+
+The ending year is set to 2031 to reduce the size/length of data (improves loading times).
+After 2031, it will be possible to add new data (and remove the old data).
+
+1. `python new_ver.py res 733 734`
+2. `python gen_loginbonus_birthday.py res 734 2026 2031`
+3. `python gen_loginbonus_holiday.py res 734 2026 2031`
+4. `python gen_delta_update.py res 733 734`
 
 ### Cleanup
 You can cleanup the large full version files for older updates that are no longer needed.
