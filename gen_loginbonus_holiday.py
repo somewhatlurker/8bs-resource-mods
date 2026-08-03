@@ -205,7 +205,7 @@ HTML_TABLE_STRINGS_JA = {
 HTML_TABLE_STRINGS_EN = {
     'date': 'Date',
     'date_format': '%m/%d',
-    'date_range_sep': '<wbr>〜<wbr>',
+    'date_range_sep': '<wbr>~<wbr>',
     'n_days_starting_day_before_easter': '{n} days starting the day before Easter',
     'holiday': 'Holiday',
     'rewards': 'Rewards',
