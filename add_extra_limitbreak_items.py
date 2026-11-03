@@ -62,11 +62,15 @@ def add_extra_limitbreak_items(resource_path, ver):
         hinata_img = read_file(resource_path, ver,
                                f'image/item/item1_{hinata_item["ID"]}.png',
                                zips=['1_pkg.zip'])
+        hinata_img40 = read_file(resource_path, ver,
+                                f'image/item/item40_1_{hinata_item["ID"]}.png',
+                                zips=['1_pkg.zip'])
         hinata_img94 = read_file(resource_path, ver,
                                 f'image/item/item94_1_{hinata_item["ID"]}.png',
                                 zips=['1_pkg.zip'])
 
         image_replacements[f'image/item/item1_{item_id}.png'] = hinata_img
+        image_replacements[f'image/item/item40_1_{item_id}.png'] = hinata_img40
         image_replacements[f'image/item/item94_1_{item_id}.png'] = hinata_img94
 
 
