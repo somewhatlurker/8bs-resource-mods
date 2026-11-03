@@ -55,6 +55,29 @@ def read_json_decrypted(resource_path, ver, name, zips=ALL_ZIP_NAMES):
     return decrypt_json(json_bytes, c_bytes)
 
 
+def mk_zip_dirs(zip_file, path):
+    """Recursively make directory at path in a zip file."""
+    if path.endswith('/'):
+        path = path[:-1]  # directories end with /, but don't want that here
+
+    try:
+        zip_file.getinfo(path + '/')
+        return  # already in archive, no need to create
+    except KeyError:
+        pass  # not in archive, must be created
+
+    # splits to either [parent_path, dir_name] or [dir_name],
+    # depending on whether there is a parent directory.
+    parts = path.rsplit('/', maxsplit=1)
+    if len(parts) == 2:
+        parent_path, dir_name = parts
+        mk_zip_dirs(zip_file, parent_path)
+
+    # either path is at root of dir or we already recursively called mk_zip_dirs
+    # for its parent, so we can now make the dir for path
+    zip_file.mkdir(path + '/', mode=0o755)
+
+
 def replace_files_in_zip(zip_path, replacements, if_exists=True):
     """Replace some files in existing .zip archive with new version.
 
@@ -102,6 +125,12 @@ def replace_files_in_zip(zip_path, replacements, if_exists=True):
             if f not in namelist_in
         ]
         for f, data in new_files:
+            # create parent directories if needed (game client doesn't seem to create them
+            # automatically if only files exist)
+            parts = f.rsplit('/', maxsplit=1)
+            if len(parts) > 1:
+                mk_zip_dirs(zip_out, parts[0])
+
             zip_out.writestr(f, data)
 
     zip_in.close()
