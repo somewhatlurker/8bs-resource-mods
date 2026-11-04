@@ -8,9 +8,34 @@ from zipfile import ZipFile
 from util import ALL_ZIP_NAMES
 
 
-def dirs_and_files_for_zipfile(zf: ZipFile) -> (dict, dict):
+def zip_contains_dir(zf: ZipFile, path):
+    """Recursively check whether zf contains directory specified by path.
+
+    Returns False if the dir or any parent dirs do not exist. Otherwise returns True.
+    """
+    if path.endswith('/'):
+        path = path[:-1]  # directories end with /, but don't want that here
+
+    # splits to either [parent_path, dir_name] or [dir_name],
+    # depending on whether there is a parent directory.
+    parts = path.rsplit('/', maxsplit=1)
+    if len(parts) == 2:
+        parent_path, dir_name = parts
+        if not zip_contains_dir(zf, parent_path):
+            return False
+
+    # either path is at root of dir or all parents exist, so now check the dir at path
+    try:
+        zf.getinfo(path + '/')
+        return True
+    except KeyError:
+        return False
+
+def dirs_and_files_for_zipfile(zf: ZipFile, ignore_if_no_dir=False) -> (dict, dict):
     """Return dictionary of directory name to ZipInfo for all directories and
     dictionary of filename to (ZipInfo, sha256 hash) for all files in zip file.
+
+    ignore_if_no_dir: omit files that are missing directory entries.
     """
     dirs = {}
     files = {}
@@ -23,12 +48,22 @@ def dirs_and_files_for_zipfile(zf: ZipFile) -> (dict, dict):
             fhash = sha256(zf.read(f)).digest()
             files[fname] = (f, fhash)
 
+    if ignore_if_no_dir:
+        for f in list(files.keys()):
+            # ensure all parents exist and remove from files dict if not
+            parts = f.rsplit('/', maxsplit=1)
+            if len(parts) > 1 and not zip_contains_dir(zf, parts[0]):
+                print(f'Warning ({zf.filename}):\n  "{f}" ignored due to missing parent directory.')
+                del files[f]
+
     return (dirs, files)
 
-def dirs_and_files_for_full_version(path: str) -> (dict, dict):
+def dirs_and_files_for_full_version(path: str, ignore_if_no_dir=False) -> (dict, dict):
     """Return dictionary of directory name to ZipInfo for all directories and
     dictionary of filename to (ZipInfo, sha256 hash) for all files in zip files
     corresponding to given verison path.
+
+    ignore_if_no_dir: omit files that are missing directory entries.
     """
     # collect details of all files, as they should exist in game's local copy to avoid
     # potential issues with moved/duplicated files that won't really be applied in fresh
@@ -39,7 +74,7 @@ def dirs_and_files_for_full_version(path: str) -> (dict, dict):
     for zipname in ALL_ZIP_NAMES:
         zippath = pathjoin(path, zipname)
         zf = ZipFile(zippath, 'r')
-        sub_dirs, sub_files = dirs_and_files_for_zipfile(zf)
+        sub_dirs, sub_files = dirs_and_files_for_zipfile(zf, ignore_if_no_dir)
         zf.close()
 
         dirs.update(sub_dirs)
@@ -68,14 +103,17 @@ def get_file_list_contents(path: str, files: [str]) -> dict:
 
 def gen_delta_update(resource_path, ver_old, ver_new):
     print(f'Generating delta update from {ver_old} to {ver_new}...')
-    print('Scanning for changes between versions...')
+    print('Enumerating version contents...')
 
     old_path = pathjoin(resource_path, str(ver_old))
-    old_dirs, old_files = dirs_and_files_for_full_version(old_path)
+    old_dirs, old_files = dirs_and_files_for_full_version(old_path, ignore_if_no_dir=True)
+    print(f'{ver_old}: total {len(old_dirs)} directories, {len(old_files)} files')
 
     new_path = pathjoin(resource_path, str(ver_new))
-    new_dirs, new_files = dirs_and_files_for_full_version(new_path)
+    new_dirs, new_files = dirs_and_files_for_full_version(new_path, ignore_if_no_dir=False)
+    print(f'{ver_new}: total {len(new_dirs)} directories, {len(new_files)} files')
 
+    print('Scanning for changes between versions...')
     created_dirs = {k: v for k, v in new_dirs.items()
                     if k not in old_dirs}
     modified_files = {k: v for k, v in new_files.items()
