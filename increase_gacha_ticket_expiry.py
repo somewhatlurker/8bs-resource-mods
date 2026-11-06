@@ -1,4 +1,4 @@
-# Makes gacha tickets last for six months (instead of 15 days)
+# Makes gacha tickets last for one year (instead of 15 days)
 
 import json
 
@@ -14,8 +14,8 @@ def increase_gacha_ticket_expiry(resource_path, ver):
             continue  # ignore anything that isn't a gacha ticket
         item_id = item['ID']
         detail = next(x for x in detail_table if x['ID'] == item_id)
-        detail['PERIOD'] = 183
-        item['DESC'] = item['DESC'].replace('15日', '6月')
+        detail['PERIOD'] = 365
+        item['DESC'] = item['DESC'].replace('15日', '1年')
 
     replacements = encrypt_replacements_json({
         'json/master_time_limit_item.json': json.dumps(item_table).encode('utf-8'),
