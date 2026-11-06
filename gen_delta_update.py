@@ -49,11 +49,15 @@ def dirs_and_files_for_zipfile(zf: ZipFile, ignore_if_no_dir=False) -> (dict, di
             files[fname] = (f, fhash)
 
     if ignore_if_no_dir:
+        warning_header_printed = False
         for f in list(files.keys()):
             # ensure all parents exist and remove from files dict if not
             parts = f.rsplit('/', maxsplit=1)
             if len(parts) > 1 and not zip_contains_dir(zf, parts[0]):
-                print(f'Warning ({zf.filename}):\n  "{f}" ignored due to missing parent directory.')
+                if not warning_header_printed:
+                    print(f'Warnings ({zf.filename}):')
+                    warning_header_printed = True
+                print(f' - "{f}" ignored due to missing parent directory.')
                 del files[f]
 
     return (dirs, files)
@@ -112,6 +116,7 @@ def gen_delta_update(resource_path, ver_old, ver_new):
     new_path = pathjoin(resource_path, str(ver_new))
     new_dirs, new_files = dirs_and_files_for_full_version(new_path, ignore_if_no_dir=False)
     print(f'{ver_new}: total {len(new_dirs)} directories, {len(new_files)} files')
+    print()
 
     print('Scanning for changes between versions...')
     created_dirs = {k: v for k, v in new_dirs.items()
