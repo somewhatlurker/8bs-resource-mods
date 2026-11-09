@@ -135,7 +135,7 @@ def _item94_text_colour(hue, sat, val):
 
 def _item94_bg_colours(hue1, hue2, glow_hue, sat, val):
     glow = tuple(round(c * 255) for c in hsv_to_rgb(glow_hue / 360, sat, val * 0.8))
-    sat = min(sat * 0.8, 0.7)
+    sat = min(sat * 0.85, 0.75)
     val = max(val * 0.8, 0.8)
     colour1 = tuple(round(c * 255) for c in hsv_to_rgb(hue1 / 360, sat * 1.05, val * 0.9))
     colour2 = tuple(round(c * 255) for c in hsv_to_rgb(hue2 / 360, sat * 0.95, val * 1.1))
