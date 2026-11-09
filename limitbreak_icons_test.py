@@ -38,14 +38,15 @@ NEW_ICON_CHARAS = {
 VER_TEXT_STROKE_WIDTH = 4
 VER_TEXT_GLOW_RADIUS = 8
 VER_TEXT_GLOW_WIDTH = 18
-VER_TEXT_GLOW_OPACITY = 0.85
+VER_TEXT_GLOW_OPACITY = 1.5
 VER_TEXT_TOTAL_EFFECT_WIDTH = VER_TEXT_STROKE_WIDTH + VER_TEXT_GLOW_WIDTH
 
 LV_TEXT_FAUX_BOLD_WIDTH = 1.5
-LV_TEXT_STROKE_WIDTH = 2.5
+LV_TEXT_STROKE_WIDTH = 3
+LVL_TEXT_STROKE_BLUR = 3
 LV_TEXT_GLOW_RADIUS = 7
 LV_TEXT_GLOW_WIDTH = 16
-LV_TEXT_GLOW_OPACITY = 2.8
+LV_TEXT_GLOW_OPACITY = 1.5
 LV_TEXT_TOTAL_EFFECT_WIDTH = LV_TEXT_FAUX_BOLD_WIDTH + LV_TEXT_STROKE_WIDTH + LV_TEXT_GLOW_WIDTH
 
 ITEM94_TEXT_FAUX_BOLD_WIDTH = 1
@@ -124,8 +125,10 @@ def _recolour_akari_icon(icon, hue1, hue2, flip_dir, sat, val, gamma):
 
 def _text_colours(hue, sat, val):
     colour = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat, val))
+    glow_sat = min(sat * 0.75, 0.75)
+    ver_glow = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, glow_sat, val))
     white = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat * 0.12, 1.0))
-    return colour, white
+    return colour, ver_glow, white
 
 def _item94_text_colour(hue, sat, val):
     colour = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat, val * 0.8))
@@ -143,7 +146,7 @@ def _item94_bg_colours(hue1, hue2, glow_hue, sat, val):
     return colour1, colour2, glow, white
 
 def _roulette_ver_text(name, hue, sat, val):
-    colour, white = _text_colours(hue, sat, val)
+    colour, glow_colour, white = _text_colours(hue, sat, val)
 
     ver_text = 'Ver .'
     ver_bbox = ROULETTE_VER_TEXT_FONT_SMALL.getbbox(ver_text)
@@ -173,8 +176,31 @@ def _roulette_ver_text(name, hue, sat, val):
         max(ver_pos[1] + ver_bbox[3], name_pos[1] + name_bbox[3]) + text_margin
     )
 
-    # start by creating strokes
-    image = Image.new('RGBA', image_size, (colour[0], colour[1], colour[2], 0))
+    # start by creating strokes for glow
+    image = Image.new('RGBA', image_size, glow_colour + (0,))
+    d = ImageDraw.Draw(image)
+    d.text(
+        ver_pos,
+        ver_text,
+        font=ROULETTE_VER_TEXT_FONT_SMALL,
+        fill=glow_colour,
+        stroke_fill=glow_colour,
+        stroke_width=VER_TEXT_STROKE_WIDTH
+    )
+    d.text(
+        name_pos,
+        name,
+        font=ROULETTE_VER_TEXT_FONT_LARGE,
+        fill=glow_colour,
+        stroke_fill=glow_colour,
+        stroke_width=VER_TEXT_STROKE_WIDTH
+    )
+    # blur to make glow
+    image = image.filter(ImageFilter.GaussianBlur(radius=VER_TEXT_GLOW_RADIUS))
+    alpha = image.getchannel('A')
+    alpha = alpha.point(lambda p: int(p * VER_TEXT_GLOW_OPACITY))
+    image.putalpha(alpha)
+    # now actual strokes
     d = ImageDraw.Draw(image)
     d.text(
         ver_pos,
@@ -192,13 +218,7 @@ def _roulette_ver_text(name, hue, sat, val):
         stroke_fill=colour,
         stroke_width=VER_TEXT_STROKE_WIDTH
     )
-    # copy and blur to make glow
-    glow = image.filter(ImageFilter.GaussianBlur(radius=VER_TEXT_GLOW_RADIUS))
-    glow_alpha = glow.getchannel('A')
-    glow_alpha = glow_alpha.point(lambda p: int(p * VER_TEXT_GLOW_OPACITY))
-    glow.putalpha(glow_alpha)
-    image.alpha_composite(glow)
-    # now the white text
+    # finally the white text
     d.text(
         ver_pos,
         ver_text,
@@ -365,7 +385,7 @@ def _item94_ver_text(name, hue, sat, val):
     return image
 
 def _lv_text(hue, sat, val):
-    colour, white = _text_colours(hue, sat, val)
+    colour, _, white = _text_colours(hue, sat, val)
 
     text = 'Lv.'
     text_bbox = LV_TEXT_FONT.getbbox(text)
@@ -396,6 +416,10 @@ def _lv_text(hue, sat, val):
     glow_alpha = glow.getchannel('A')
     glow_alpha = glow_alpha.point(lambda p: int(p * LV_TEXT_GLOW_OPACITY))
     glow.putalpha(glow_alpha)
+    # blur to make a smoother transition/less obvious stroke
+    image = image.filter(ImageFilter.GaussianBlur(radius=LVL_TEXT_STROKE_BLUR))
+    d = ImageDraw.Draw(image)
+    #composite the glow
     image.alpha_composite(glow)
     # now the white text
     d.text(
