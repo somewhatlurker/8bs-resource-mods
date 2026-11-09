@@ -133,13 +133,14 @@ def _item94_text_colour(hue, sat, val):
     white = (255, 255, 255, 255)
     return colour, shadow, white
 
-def _item94_bg_colours(hue1, hue2, sat, val):
-    sat = min(sat * 0.75, 0.65)
+def _item94_bg_colours(hue1, hue2, glow_hue, sat, val):
+    glow = tuple(round(c * 255) for c in hsv_to_rgb(glow_hue / 360, sat, val * 0.8))
+    sat = min(sat * 0.8, 0.7)
     val = max(val * 0.8, 0.8)
-    colour1 = tuple(round(c * 255) for c in hsv_to_rgb(hue1 / 360, sat, val))
-    colour2 = tuple(round(c * 255) for c in hsv_to_rgb(hue2 / 360, sat, val))
+    colour1 = tuple(round(c * 255) for c in hsv_to_rgb(hue1 / 360, sat * 1.05, val * 0.9))
+    colour2 = tuple(round(c * 255) for c in hsv_to_rgb(hue2 / 360, sat * 0.95, val * 1.1))
     white = (255, 255, 255, 255)
-    return colour1, colour2, white
+    return colour1, colour2, glow, white
 
 def _roulette_ver_text(name, hue, sat, val):
     colour, white = _text_colours(hue, sat, val)
@@ -213,8 +214,8 @@ def _roulette_ver_text(name, hue, sat, val):
 
     return image
 
-def _item94_bg(hue1, hue2, sat, val):
-    colour1, colour2, white = _item94_bg_colours(hue1, hue2, sat, val)
+def _item94_bg(hue1, hue2, glow_hue, sat, val):
+    colour1, colour2, colour_glow, white = _item94_bg_colours(hue1, hue2, glow_hue, sat, val)
 
     rect_pos = [ITEM94_IMG_SIZE[i]//2 - ITEM94_BG_RECT_DIM[i]//2 for i in range(2)]
 
@@ -231,9 +232,11 @@ def _item94_bg(hue1, hue2, sat, val):
             pos = (y - rect_pos[1]) / ITEM94_BG_RECT_DIM[1]
             #col = tuple(int(colour1[i] * (1-pos) + colour2[i] * pos) for i in range(3))
             if pos < 0.5:
-                col = tuple(int(colour1[i] * (1-pos*2) + grad_mid_col[i] * pos*2) for i in range(3))
+                pos_adj = (pos * 2) ** 0.7
+                col = tuple(int(colour1[i] * (1-pos_adj) + grad_mid_col[i] * pos_adj) for i in range(3))
             else:
-                col = tuple(int(grad_mid_col[i] * (2-pos*2) + colour2[i] * (pos*2-1)) for i in range(3))
+                pos_adj = (pos * 2 - 1) ** (1 / 0.7)
+                col = tuple(int(grad_mid_col[i] * (1-pos_adj) + colour2[i] * pos_adj) for i in range(3))
             pixels[0, y] = col
     grad = grad.resize(ITEM94_IMG_SIZE)
     grad_alpha = grad.getchannel('A')
@@ -247,13 +250,13 @@ def _item94_bg(hue1, hue2, sat, val):
     grad.putalpha(grad_alpha)
 
     # now the outline and its glow
-    outline = Image.new('RGBA', ITEM94_IMG_SIZE, (colour1[0], colour1[1], colour1[2], 0))
+    outline = Image.new('RGBA', ITEM94_IMG_SIZE, (colour_glow[0], colour_glow[1], colour_glow[2], 0))
     d = ImageDraw.Draw(outline)
     # start with the glow
     d.rounded_rectangle(
         (rect_pos, [rect_pos[i] + ITEM94_BG_RECT_DIM[i] for i in range(2)]),
         ITEM94_BG_RECT_RADIUS,
-        fill=(colour1[0], colour1[1], colour1[2], 0),
+        fill=(colour_glow[0], colour_glow[1], colour_glow[2], 0),
         outline=colour1,
         width=ITEM94_BG_RECT_STROKE_WIDTH
     )
@@ -453,7 +456,7 @@ def _gen_layers(chara_id):
     layers['item94_ver_text'] = item94_ver_text
 
     # bg for item94 icon
-    layers['item94_bg'] = _item94_bg(hue1, hue2, sat, val)
+    layers['item94_bg'] = _item94_bg(hue1, hue2, text_hue, sat, val)
 
     return layers
 
