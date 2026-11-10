@@ -22,15 +22,15 @@ FOT_COMET_RESOURCE_PATH = 'font/FOT-CometStd-B.otf'
 RES_PATH = 'res'
 RES_VER = 729
 
-# chara_id: (name, hue1, hue2, flip_dir, sat, val, gamma)
+# chara_id: (name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip)
 NEW_ICON_CHARAS = {
-    # 3: ('月', 0, 45.2, False, 1.0, 1.0, 1.0),
-    10: ('かなで', 275, 55, True, 0.68, 1.0, 0.9),
-    11: ('アルミ', 143, 132, False, 1.3, 0.95, 2.25),
-    12: ('ミント', 160, 175, False, 1.2, 1.0, 1.5),
-    13: ('アモル', 50, 60, False, 0.81, 0.93, 3.0),
-    14: ('クゥエル', 305, 320, False, 0.72, 1.0, 1.0),
-    15: ('ベル', 250, 225, False, 0.72, 1.0, 0.8)
+    # 3: ('月', 0, 45.2, False, 1.0, 1.0, 1.1, 1.0, 0.0),
+    10: ('かなで', 275, 55, True, 0.68, 1.0, 1.0, 0.9, 0.0),
+    11: ('アルミ', 143, 132, False, 1.2, 0.95, 0.9, 1.6, 0.1),
+    12: ('ミント', 160, 175, False, 1.1, 1.0, 0.95, 1.5, 0.0),
+    13: ('アモル', 50, 60, False, 0.81, 0.93, 0.9, 1.7, 0.25),
+    14: ('クゥエル', 305, 320, False, 0.72, 1.0, 1.0, 1.0, 0.0),
+    15: ('ベル', 250, 225, False, 0.72, 1.0, 1.0, 0.8, 0.0)
 }
 
 # AKARI_TEXT_COLOUR_RGB = (255, 76, 0)
@@ -51,7 +51,7 @@ LV_TEXT_TOTAL_EFFECT_WIDTH = LV_TEXT_FAUX_BOLD_WIDTH + LV_TEXT_STROKE_WIDTH + LV
 
 ITEM94_TEXT_FAUX_BOLD_WIDTH = 1
 ITEM94_TEXT_STROKE_WIDTH = 7
-ITEM94_TEXT_SHADOW_OFFSET = 4
+ITEM94_TEXT_SHADOW_OFFSET = 5
 ITEM94_TEXT_SHADOW_OPACITY = 0.8
 ITEM94_TEXT_TOTAL_EFFECT_WIDTH = ITEM94_TEXT_FAUX_BOLD_WIDTH + ITEM94_TEXT_STROKE_WIDTH + ITEM94_TEXT_SHADOW_OFFSET
 
@@ -82,7 +82,7 @@ ITEM94_VER_TEXT_FONT_SMALL = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 95
 ITEM94_VER_TEXT_FONT_LARGE = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 123)
 
 
-def _recolour_akari_icon(icon, hue1, hue2, flip_dir, sat, val, gamma):
+def _recolour_akari_icon(icon, hue1, hue2, flip_dir, sat, val, gamma, black_clip):
     #img = Image.eval(icon, lambda x: 255 * (x ** gamma) / (255 ** gamma))
     #img.putalpha(icon.getchannel('A'))
     ch_h, ch_s, ch_v = icon.convert('HSV').split()
@@ -116,6 +116,7 @@ def _recolour_akari_icon(icon, hue1, hue2, flip_dir, sat, val, gamma):
     ch_h = ch_h.convert('L')
 
     ch_s = Image.eval(ch_s, lambda s: s * sat)
+    ch_v = Image.eval(ch_v, lambda v: int((v - 255) / (1-black_clip) + 255))
     ch_v = Image.eval(ch_v, lambda v: 255 * (v ** gamma) / (255 ** gamma))
     ch_v = Image.eval(ch_v, lambda v: v * val)
 
@@ -132,16 +133,16 @@ def _text_colours(hue, sat, val):
 
 def _item94_text_colour(hue, sat, val):
     colour = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat, val * 0.8))
-    shadow = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat, val * 0.35)) + (int(255 * ITEM94_TEXT_SHADOW_OPACITY),)
+    shadow = tuple(round(c * 255) for c in hsv_to_rgb(hue / 360, sat, val * 0.4)) + (int(255 * ITEM94_TEXT_SHADOW_OPACITY),)
     white = (255, 255, 255, 255)
     return colour, shadow, white
 
 def _item94_bg_colours(hue1, hue2, glow_hue, sat, val):
-    glow = tuple(round(c * 255) for c in hsv_to_rgb(glow_hue / 360, sat, val * 0.8))
+    glow = tuple(round(c * 255) for c in hsv_to_rgb(glow_hue / 360, sat, val * 0.78))
     sat = min(sat * 0.85, 0.75)
     val = max(val * 0.8, 0.8)
-    colour1 = tuple(round(c * 255) for c in hsv_to_rgb(hue1 / 360, sat * 1.05, val * 0.9))
-    colour2 = tuple(round(c * 255) for c in hsv_to_rgb(hue2 / 360, sat * 0.95, val * 1.1))
+    colour1 = tuple(round(c * 255) for c in hsv_to_rgb(hue1 / 360, sat * 1.05, val * 0.88))
+    colour2 = tuple(round(c * 255) for c in hsv_to_rgb(hue2 / 360, sat * 0.92, val * 1.1))
     white = (255, 255, 255, 255)
     return colour1, colour2, glow, white
 
@@ -241,7 +242,7 @@ def _item94_bg(hue1, hue2, glow_hue, sat, val):
 
     # generate the background gradient image
     grad = Image.new('RGBA', (1, ITEM94_IMG_SIZE[1]), (0, 0, 0, 0))
-    grad_mid_col = tuple(int(colour1[i]*0.07 + colour2[i]*0.07 + 255*0.86) for i in range(3))
+    grad_mid_col = tuple(int(colour1[i]*0.05 + colour2[i]*0.05 + 255*0.9) for i in range(3))
     pixels = grad.load()
     for y in range(grad.height):
         if y < rect_pos[1]:
@@ -252,10 +253,10 @@ def _item94_bg(hue1, hue2, glow_hue, sat, val):
             pos = (y - rect_pos[1]) / ITEM94_BG_RECT_DIM[1]
             #col = tuple(int(colour1[i] * (1-pos) + colour2[i] * pos) for i in range(3))
             if pos < 0.5:
-                pos_adj = (pos * 2) ** 0.7
+                pos_adj = (pos * 2) ** 0.68
                 col = tuple(int(colour1[i] * (1-pos_adj) + grad_mid_col[i] * pos_adj) for i in range(3))
             else:
-                pos_adj = (pos * 2 - 1) ** (1 / 0.7)
+                pos_adj = (pos * 2 - 1) ** (1 / 0.68)
                 col = tuple(int(grad_mid_col[i] * (1-pos_adj) + colour2[i] * pos_adj) for i in range(3))
             pixels[0, y] = col
     grad = grad.resize(ITEM94_IMG_SIZE)
@@ -434,7 +435,7 @@ def _lv_text(hue, sat, val):
     return image
 
 def _gen_layers(chara_id):
-    name, hue1, hue2, flip_dir, sat, val, gamma = NEW_ICON_CHARAS[chara_id]
+    name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip = NEW_ICON_CHARAS[chara_id]
 
     if flip_dir:
         if hue1 > hue2:
@@ -450,11 +451,11 @@ def _gen_layers(chara_id):
 
     layers = AKARI_ICON_LAYERS.copy()
     for k in layers.keys():
-        layers[k] = _recolour_akari_icon(layers[k], hue1, hue2, flip_dir, sat, val, gamma)
+        layers[k] = _recolour_akari_icon(layers[k], hue1, hue2, flip_dir, sat, val, gamma, black_clip)
 
     # generate "Ver. {name}" text as additional custom layers
     roulette_ver_text = Image.new('RGBA', (640, 640), (128, 128, 128, 0))
-    roulette_ver_text_raw = _roulette_ver_text(name, text_hue, sat, val)
+    roulette_ver_text_raw = _roulette_ver_text(name, text_hue, sat, text_val)
     roulette_ver_text_pos = (640 - roulette_ver_text_raw.width - 19,
                              640 - roulette_ver_text_raw.height - 17)
     roulette_ver_text.alpha_composite(roulette_ver_text_raw, roulette_ver_text_pos)
@@ -462,7 +463,7 @@ def _gen_layers(chara_id):
 
     # also generate "Lv." text, to ensure colour matches "Ver." text
     lv_text = Image.new('RGBA', (640, 640), (128, 128, 128, 0))
-    lv_text_raw = _lv_text(text_hue, sat, val)
+    lv_text_raw = _lv_text(text_hue, sat, text_val)
     lv_text_pos = (640//2 - lv_text_raw.width//2 + 2, 640//2 - lv_text_raw.height//2 - 11)
     lv_text.alpha_composite(lv_text_raw, lv_text_pos)
     layers['lv_text'] = lv_text
@@ -473,9 +474,9 @@ def _gen_layers(chara_id):
 
     # text for use in item94 icon
     item94_ver_text = Image.new('RGBA', ITEM94_IMG_SIZE, (128, 128, 128, 0))
-    item94_ver_text_raw = _item94_ver_text(name, text_hue, sat, val)
+    item94_ver_text_raw = _item94_ver_text(name, text_hue, sat, text_val)
     item94_ver_text_pos = (ITEM94_IMG_SIZE[0]//2 - item94_ver_text_raw.width//2 + 4,
-                           ITEM94_IMG_SIZE[1] - item94_ver_text_raw.height - 84)
+                           ITEM94_IMG_SIZE[1] - item94_ver_text_raw.height - 83)
     item94_ver_text.alpha_composite(item94_ver_text_raw, item94_ver_text_pos)
     layers['item94_ver_text'] = item94_ver_text
 
@@ -517,12 +518,12 @@ def _roulette_icon(layers):
     return img_icon
 
 def _mini_icon(chara_id):
-    name, hue1, hue2, flip_dir, sat, val, gamma = NEW_ICON_CHARAS[chara_id]
-    return _recolour_akari_icon(AKARI_MINI_ICON, hue1, hue2, flip_dir, sat, val, gamma)
+    name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip = NEW_ICON_CHARAS[chara_id]
+    return _recolour_akari_icon(AKARI_MINI_ICON, hue1, hue2, flip_dir, sat, val, gamma, black_clip)
 
 def _item40_icon(chara_id):
-    name, hue1, hue2, flip_dir, sat, val, gamma = NEW_ICON_CHARAS[chara_id]
-    return _recolour_akari_icon(AKARI_ITEM40_ICON, hue1, hue2, flip_dir, sat, val, gamma)
+    name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip = NEW_ICON_CHARAS[chara_id]
+    return _recolour_akari_icon(AKARI_ITEM40_ICON, hue1, hue2, flip_dir, sat, val, gamma, black_clip)
 
 def _item94_icon(layers):
     img = layers['item94_bg'].copy()
@@ -551,9 +552,8 @@ def _item94_icon(layers):
     img = img.resize((90, 90), Image.Resampling.BICUBIC)
     return img
 
-# recolour_akari_roulette(180, 280).save('icon_item_3_cyanpurp.png')
+
 for i, chara_id in enumerate(NEW_ICON_CHARAS.keys()):
-    # x is (name, hue1, hue2, flip_dir, sat, val, gamma)
     layers = _gen_layers(chara_id)
     for j, name in enumerate(ICON_LAYERS):
         layers[name].save(f'img_limit{chara_id}_{j+1}.png')
