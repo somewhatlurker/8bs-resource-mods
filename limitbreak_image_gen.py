@@ -1,3 +1,10 @@
+# Generates limitbreak item images for characters that never had them before.
+# Works by recolouring Akari's icons, then compositing them with text and backgrounds.
+
+if __name__ == '__main__':
+    print ('Do not run this script directly. It is for importing into other scripts.')
+    exit()
+
 from colorsys import hsv_to_rgb
 from io import BytesIO
 import math
@@ -17,14 +24,15 @@ MINI_ICON_RESOURCE_PATH = 'image/lesson/icon_itemmini_{chara_id}.png'
 ITEM_ICON_RESOURCE_PATH = 'image/item/item1_{item_id}.png'
 ITEM40_ICON_RESOURCE_PATH = 'image/item/item40_1_{item_id}.png'
 ITEM94_ICON_RESOURCE_PATH = 'image/item/item94_1_{item_id}.png'
+ITEM1_ICON_RESOURCE_PATH = 'image/item/item1_{item_id}.png'
 FOT_COMET_RESOURCE_PATH = 'font/FOT-CometStd-B.otf'
 
-RES_PATH = 'res'
-RES_VER = 729
+AKARI_CHARA_ID = 3
+AKARI_ITEM_ID = 19
 
 # chara_id: (name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip)
 NEW_ICON_CHARAS = {
-    # 3: ('月', 0, 45.2, False, 1.0, 1.0, 1.1, 1.0, 0.0),
+    # AKARI_CHARA_ID: ('月', 0, 45.2, False, 1.0, 1.0, 1.1, 1.0, 0.0),
     10: ('かなで', 275, 55, True, 0.68, 1.0, 1.0, 0.9, 0.0),
     11: ('アルミ', 143, 132, False, 1.2, 0.95, 0.9, 1.6, 0.1),
     12: ('ミント', 160, 175, False, 1.1, 1.0, 0.95, 1.5, 0.0),
@@ -76,11 +84,9 @@ def read_apk_file(name):
 
 # note: originally experimented with Akari's roulette icon because its text could be
 # cropped off cleanly. thst's not needed anymore, but Akari's is still a good base.
-AKARI_ICON_LAYERS = {name: Image.open(BytesIO(read_apk_file(ICON_RESOURCE_PATH.format(chara_id=3, layer_id=i+1))))
+AKARI_ICON_LAYERS = {name: Image.open(BytesIO(read_apk_file(ICON_RESOURCE_PATH.format(chara_id=AKARI_CHARA_ID, layer_id=i+1))))
                      for i, name in enumerate(ICON_LAYERS)}
-AKARI_MINI_ICON = Image.open(BytesIO(read_apk_file(MINI_ICON_RESOURCE_PATH.format(chara_id=3))))
-AKARI_ITEM40_ICON = Image.open(BytesIO(read_file(RES_PATH, RES_VER, ITEM40_ICON_RESOURCE_PATH.format(item_id=19))))
-AKARI_ITEM94_ICON = Image.open(BytesIO(read_file(RES_PATH, RES_VER, ITEM94_ICON_RESOURCE_PATH.format(item_id=19))))
+AKARI_MINI_ICON = Image.open(BytesIO(read_apk_file(MINI_ICON_RESOURCE_PATH.format(chara_id=AKARI_CHARA_ID))))
 
 FOT_COMET_OTF_BYTES = read_apk_file(FOT_COMET_RESOURCE_PATH)
 ROULETTE_VER_TEXT_FONT_SMALL = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 64)
@@ -602,9 +608,10 @@ def _mini_icon(chara_id):
     name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip = NEW_ICON_CHARAS[chara_id]
     return _recolour_akari_icon(AKARI_MINI_ICON, hue1, hue2, flip_dir, sat, val, gamma, black_clip)
 
-def _item40_icon(chara_id):
+def _item40_icon(res_path, res_ver, chara_id):
     name, hue1, hue2, flip_dir, sat, val, text_val, gamma, black_clip = NEW_ICON_CHARAS[chara_id]
-    return _recolour_akari_icon(AKARI_ITEM40_ICON, hue1, hue2, flip_dir, sat, val, gamma, black_clip)
+    akari_item40_icon = Image.open(BytesIO(read_file(res_path, res_ver, ITEM40_ICON_RESOURCE_PATH.format(item_id=AKARI_ITEM_ID))))
+    return _recolour_akari_icon(akari_item40_icon, hue1, hue2, flip_dir, sat, val, gamma, black_clip)
 
 def _item94_icon(layers):
     img = layers['item94_bg'].copy()
@@ -659,20 +666,31 @@ def _item1_icon(layers):
     # resize to 90x90
     img = img.resize((90, 90), Image.Resampling.BICUBIC)
     return img
+
+
+def gen_limitbreak_images(res_path, res_ver, chara_id, item_id):
+    """Generate limitbreak images for given character.
+
+    Returns dict of path to Image.
+    Only supports chara_id in [10, 11, 12, 13, 14, 15].
+    """
+    layers = _gen_layers(chara_id)
+
+    layer_images = {
+        ICON_RESOURCE_PATH.format(chara_id=chara_id, layer_id=i+1): layers[name].convert('RGBA')
+        for i, name in enumerate(ICON_LAYERS)
     }
 
+    roulette = _roulette_icon(layers).convert('RGBA')
+    mini_icon = _mini_icon(chara_id).convert('RGBA')
+    item40_icon = _item40_icon(res_path, res_ver, chara_id).convert('RGBA')
+    item94_icon = _item94_icon(layers).convert('RGBA')
+    item1_icon = _item1_icon(layers).convert('RGBA')
 
-for i, chara_id in enumerate(NEW_ICON_CHARAS.keys()):
-    layers = _gen_layers(chara_id)
-    for j, name in enumerate(ICON_LAYERS):
-        layers[name].save(f'img_limit{chara_id}_{j+1}.png')
-    img_roulette = _roulette_icon(layers)
-    img_roulette.save(f'icon_item_{chara_id}.png')
-    mini_icon = _mini_icon(chara_id)
-    mini_icon.save(f'icon_itemmini_{chara_id}.png')
-    item40_icon = _item40_icon(chara_id)
-    item40_icon.save(f'item40_1_{i+25}.png')
-    item94_icon = _item94_icon(layers)
-    item94_icon.save(f'item94_1_{i+25}.png')
-    item1_icon = _item1_icon(layers)
-    item1_icon.save(f'item1_{i+25}.png')
+    return layer_images | {
+        ROULETTE_ICON_RESOURCE_PATH.format(chara_id=chara_id): roulette,
+        MINI_ICON_RESOURCE_PATH.format(chara_id=chara_id): mini_icon,
+        ITEM40_ICON_RESOURCE_PATH.format(item_id=item_id): item40_icon,
+        ITEM94_ICON_RESOURCE_PATH.format(item_id=item_id): item94_icon,
+        ITEM1_ICON_RESOURCE_PATH.format(item_id=item_id): item1_icon
+    }

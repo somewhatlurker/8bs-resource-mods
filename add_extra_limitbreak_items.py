@@ -1,10 +1,26 @@
 # Adds level limit increase (break) items for 2_wEi and BAC members.
 
+from io import BytesIO
 import json
 from os.path import join as path_join
 
+from PIL import Image
+
+from limitbreak_image_gen import gen_limitbreak_images
 from util import encrypt_replacements_json, read_file, read_json_decrypted, \
                  replace_files_in_ver, replace_files_in_zip
+
+
+try:
+    import imagequant
+    def image_quantize(image: Image) -> Image:
+        # slightly higher quality than other places (usually use 90) to improve glow effects
+        return imagequant.quantize_pil_image(image, max_quality=95)
+except ImportError:
+    print('Warning: imagequant not installed, will use lower quality quantisation.')
+    def image_quantize(image: Image) -> Image:
+        return image.quantize()
+
 
 # ID: name
 GIRLS_TO_ADD = {
@@ -58,20 +74,22 @@ def add_extra_limitbreak_items(resource_path, ver):
         }
         detail_table.append(detail_row)
 
-        # temporary: just copy hinata's images
-        hinata_img = read_file(resource_path, ver,
-                               f'image/item/item1_{hinata_item["ID"]}.png',
-                               zips=['1_pkg.zip'])
-        hinata_img40 = read_file(resource_path, ver,
-                                f'image/item/item40_1_{hinata_item["ID"]}.png',
-                                zips=['1_pkg.zip'])
-        hinata_img94 = read_file(resource_path, ver,
-                                f'image/item/item94_1_{hinata_item["ID"]}.png',
-                                zips=['1_pkg.zip'])
+        images = gen_limitbreak_images(resource_path, ver, girl[0], item_id)
+        for path, img in images.items():
+            quantize = True
+            # don't quantize these because it makes the gradients look bad,
+            # and the images are sufficiently small anyway
+            # (the original files do this too)
+            for filename_part in ('item1_', 'item40_', 'item94_', 'icon_item_'):
+                if filename_part in path:
+                    quantize = False
+                    break
+            if quantize:
+                img = image_quantize(img)
 
-        image_replacements[f'image/item/item1_{item_id}.png'] = hinata_img
-        image_replacements[f'image/item/item40_1_{item_id}.png'] = hinata_img40
-        image_replacements[f'image/item/item94_1_{item_id}.png'] = hinata_img94
+            io = BytesIO()
+            img.save(io, format='PNG')
+            image_replacements[path] = io.getvalue()
 
 
     replacements = encrypt_replacements_json({
