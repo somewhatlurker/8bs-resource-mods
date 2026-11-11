@@ -16,7 +16,7 @@ ROULETTE_ICON_RESOURCE_PATH = 'image/lesson/icon_item_{chara_id}.png'
 MINI_ICON_RESOURCE_PATH = 'image/lesson/icon_itemmini_{chara_id}.png'
 ITEM_ICON_RESOURCE_PATH = 'image/item/item1_{item_id}.png'
 ITEM40_ICON_RESOURCE_PATH = 'image/item/item40_1_{item_id}.png'
-ITEM94_ICON_RESOURCE_PATH = 'image/item/item94_1_{item_id}.png'  # note: actually 90x90, same as other item image
+ITEM94_ICON_RESOURCE_PATH = 'image/item/item94_1_{item_id}.png'
 FOT_COMET_RESOURCE_PATH = 'font/FOT-CometStd-B.otf'
 
 RES_PATH = 'res'
@@ -42,24 +42,32 @@ VER_TEXT_GLOW_OPACITY = 1.5
 VER_TEXT_TOTAL_EFFECT_WIDTH = VER_TEXT_STROKE_WIDTH + VER_TEXT_GLOW_WIDTH
 
 LV_TEXT_FAUX_BOLD_WIDTH = 1.5
-LV_TEXT_STROKE_WIDTH = 3
-LVL_TEXT_STROKE_BLUR = 3
-LV_TEXT_GLOW_RADIUS = 7
-LV_TEXT_GLOW_WIDTH = 16
-LV_TEXT_GLOW_OPACITY = 1.5
+LV_TEXT_STROKE_WIDTH = 4
+LVL_TEXT_STROKE_BLUR = 4
+LV_TEXT_GLOW_RADIUS = 8
+LV_TEXT_GLOW_WIDTH = 17
+LV_TEXT_GLOW_OPACITY = 1.6
 LV_TEXT_TOTAL_EFFECT_WIDTH = LV_TEXT_FAUX_BOLD_WIDTH + LV_TEXT_STROKE_WIDTH + LV_TEXT_GLOW_WIDTH
 
 ITEM94_TEXT_FAUX_BOLD_WIDTH = 1
 ITEM94_TEXT_STROKE_WIDTH = 7
-ITEM94_TEXT_SHADOW_OFFSET = 5
+ITEM94_TEXT_SHADOW_OFFSET = (7, 6)
 ITEM94_TEXT_SHADOW_OPACITY = 0.8
-ITEM94_TEXT_TOTAL_EFFECT_WIDTH = ITEM94_TEXT_FAUX_BOLD_WIDTH + ITEM94_TEXT_STROKE_WIDTH + ITEM94_TEXT_SHADOW_OFFSET
+ITEM94_TEXT_TOTAL_EFFECT_WIDTH = ITEM94_TEXT_FAUX_BOLD_WIDTH + ITEM94_TEXT_STROKE_WIDTH + max(ITEM94_TEXT_SHADOW_OFFSET)
 
 ITEM94_IMG_SIZE = (745, 745)
 ITEM94_BG_RECT_DIM = (680, 680)
-ITEM94_BG_RECT_RADIUS = 128  # 33
+ITEM94_BG_RECT_RADIUS = 126
 ITEM94_BG_RECT_STROKE_WIDTH = 26
 ITEM94_BG_GLOW_RADIUS = 17
+
+# item1 and item94 are both 90x90 and almost identical -
+# item1 just has a smaller square/rectangle for the background
+ITEM1_IMG_SIZE = (745, 745)
+ITEM1_BG_RECT_DIM = (662, 662)
+ITEM1_BG_RECT_RADIUS = 124
+ITEM1_BG_RECT_STROKE_WIDTH = 26
+ITEM1_BG_GLOW_RADIUS = 17
 
 def read_apk_file(name):
     """Read the bytes content of a file in the game's APK."""
@@ -78,7 +86,7 @@ FOT_COMET_OTF_BYTES = read_apk_file(FOT_COMET_RESOURCE_PATH)
 ROULETTE_VER_TEXT_FONT_SMALL = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 64)
 ROULETTE_VER_TEXT_FONT_LARGE = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 85)
 LV_TEXT_FONT = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 130)
-ITEM94_VER_TEXT_FONT_SMALL = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 95)
+ITEM94_VER_TEXT_FONT_SMALL = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 94)
 ITEM94_VER_TEXT_FONT_LARGE = ImageFont.truetype(BytesIO(FOT_COMET_OTF_BYTES), 123)
 
 
@@ -149,7 +157,7 @@ def _item94_bg_colours(hue1, hue2, glow_hue, sat, val):
 def _roulette_ver_text(name, hue, sat, val):
     colour, glow_colour, white = _text_colours(hue, sat, val)
 
-    ver_text = 'Ver .'
+    ver_text = 'Ver\u200a.'
     ver_bbox = ROULETTE_VER_TEXT_FONT_SMALL.getbbox(ver_text)
     ver_metrics = ROULETTE_VER_TEXT_FONT_SMALL.getmetrics()
     ver_ascent = ver_metrics[0]
@@ -170,7 +178,7 @@ def _roulette_ver_text(name, hue, sat, val):
     )
     ver_pos = (
         ver_pos[0],
-        name_pos[1] + name_bbox[3] - ver_bbox[3] - name_descent + ver_descent  # update to align baselines
+        name_pos[1] + name_bbox[3] - ver_bbox[3] - name_descent + ver_descent + 2  # update to align baselines
     )
     image_size = (
         name_pos[0] + name_bbox[2] + text_margin,
@@ -275,7 +283,11 @@ def _item94_bg(hue1, hue2, glow_hue, sat, val):
     d = ImageDraw.Draw(outline)
     # start with the glow
     d.rounded_rectangle(
-        (rect_pos, [rect_pos[i] + ITEM94_BG_RECT_DIM[i] for i in range(2)]),
+        (
+            # note: glow is shifted slightly inwards
+            [rect_pos[i] + 1 for i in range(2)],
+            [rect_pos[i] + ITEM94_BG_RECT_DIM[i] - 2 for i in range(2)]
+        ),
         ITEM94_BG_RECT_RADIUS,
         fill=(colour_glow[0], colour_glow[1], colour_glow[2], 0),
         outline=colour1,
@@ -296,11 +308,77 @@ def _item94_bg(hue1, hue2, glow_hue, sat, val):
     grad.alpha_composite(outline)
     return grad
 
+# item1 and item94 are both 90x90 and almost identical -
+# item1 just has a smaller square/rectangle for the background
+def _item1_bg(hue1, hue2, glow_hue, sat, val):
+    colour1, colour2, colour_glow, white = _item94_bg_colours(hue1, hue2, glow_hue, sat, val)
+
+    rect_pos = [ITEM1_IMG_SIZE[i]//2 - ITEM1_BG_RECT_DIM[i]//2 for i in range(2)]
+
+    # generate the background gradient image
+    grad = Image.new('RGBA', (1, ITEM1_IMG_SIZE[1]), (0, 0, 0, 0))
+    grad_mid_col = tuple(int(colour1[i]*0.05 + colour2[i]*0.05 + 255*0.9) for i in range(3))
+    pixels = grad.load()
+    for y in range(grad.height):
+        if y < rect_pos[1]:
+            pixels[0, y] = colour1
+        elif y >= rect_pos[1] + ITEM1_BG_RECT_DIM[1]:
+            pixels[0, y] = colour2
+        else:
+            pos = (y - rect_pos[1]) / ITEM1_BG_RECT_DIM[1]
+            #col = tuple(int(colour1[i] * (1-pos) + colour2[i] * pos) for i in range(3))
+            if pos < 0.5:
+                pos_adj = (pos * 2) ** 0.68
+                col = tuple(int(colour1[i] * (1-pos_adj) + grad_mid_col[i] * pos_adj) for i in range(3))
+            else:
+                pos_adj = (pos * 2 - 1) ** (1 / 0.68)
+                col = tuple(int(grad_mid_col[i] * (1-pos_adj) + colour2[i] * pos_adj) for i in range(3))
+            pixels[0, y] = col
+    grad = grad.resize(ITEM1_IMG_SIZE)
+    grad_alpha = grad.getchannel('A')
+    d = ImageDraw.Draw(grad_alpha)
+    d.rectangle([(0, 0), grad_alpha.size], fill = (0))  # clear to 0
+    d.rounded_rectangle(
+        (rect_pos, [rect_pos[i] + ITEM1_BG_RECT_DIM[i] for i in range(2)]),
+        ITEM1_BG_RECT_RADIUS,
+        (255)  # fill rect
+    )
+    grad.putalpha(grad_alpha)
+
+    # now the outline and its glow
+    outline = Image.new('RGBA', ITEM1_IMG_SIZE, (colour_glow[0], colour_glow[1], colour_glow[2], 0))
+    d = ImageDraw.Draw(outline)
+    # start with the glow
+    d.rounded_rectangle(
+        (
+            # note: glow is shifted slightly inwards
+            [rect_pos[i] + 1 for i in range(2)],
+            [rect_pos[i] + ITEM1_BG_RECT_DIM[i] - 2 for i in range(2)]
+        ),
+        ITEM1_BG_RECT_RADIUS,
+        fill=(colour_glow[0], colour_glow[1], colour_glow[2], 0),
+        outline=colour1,
+        width=ITEM1_BG_RECT_STROKE_WIDTH
+    )
+    outline = outline.filter(ImageFilter.GaussianBlur(radius=ITEM1_BG_GLOW_RADIUS))
+    d = ImageDraw.Draw(outline)
+    # then the outline itself
+    d.rounded_rectangle(
+        (rect_pos, [rect_pos[i] + ITEM1_BG_RECT_DIM[i] for i in range(2)]),
+        ITEM1_BG_RECT_RADIUS,
+        fill=None,
+        outline=white,
+        width=ITEM1_BG_RECT_STROKE_WIDTH
+    )
+
+    # composite outline over the gradient
+    grad.alpha_composite(outline)
+    return grad
 
 def _item94_ver_text(name, hue, sat, val):
     colour, shadow, white = _item94_text_colour(hue, sat, val)
 
-    ver_text = 'Ver.'
+    ver_text = 'Ver\u200a.'
     ver_bbox = ITEM94_VER_TEXT_FONT_SMALL.getbbox(ver_text)
     ver_metrics = ITEM94_VER_TEXT_FONT_SMALL.getmetrics()
     ver_ascent = ver_metrics[0]
@@ -321,7 +399,7 @@ def _item94_ver_text(name, hue, sat, val):
     )
     ver_pos = (
         ver_pos[0],
-        name_pos[1] + name_bbox[3] - ver_bbox[3] - name_descent + ver_descent  # update to align baselines
+        name_pos[1] + name_bbox[3] - ver_bbox[3] - name_descent + ver_descent + 2  # update to align baselines
     )
     image_size = (
         name_pos[0] + name_bbox[2] + text_margin,
@@ -332,7 +410,7 @@ def _item94_ver_text(name, hue, sat, val):
     image = Image.new('RGBA', image_size, (colour[0], colour[1], colour[2], 0))
     d = ImageDraw.Draw(image)
     d.text(
-        [x + ITEM94_TEXT_SHADOW_OFFSET for x in ver_pos],
+        [ver_pos[i] + ITEM94_TEXT_SHADOW_OFFSET[i] for i in range(2)],
         ver_text,
         font=ITEM94_VER_TEXT_FONT_SMALL,
         fill=shadow,
@@ -340,7 +418,7 @@ def _item94_ver_text(name, hue, sat, val):
         stroke_width=ITEM94_TEXT_FAUX_BOLD_WIDTH + ITEM94_TEXT_STROKE_WIDTH
     )
     d.text(
-        [x + ITEM94_TEXT_SHADOW_OFFSET for x in name_pos],
+        [name_pos[i] + ITEM94_TEXT_SHADOW_OFFSET[i] for i in range(2)],
         name,
         font=ITEM94_VER_TEXT_FONT_LARGE,
         fill=shadow,
@@ -457,7 +535,7 @@ def _gen_layers(chara_id):
     roulette_ver_text = Image.new('RGBA', (640, 640), (128, 128, 128, 0))
     roulette_ver_text_raw = _roulette_ver_text(name, text_hue, sat, text_val)
     roulette_ver_text_pos = (640 - roulette_ver_text_raw.width - 19,
-                             640 - roulette_ver_text_raw.height - 17)
+                             640 - roulette_ver_text_raw.height - 18)
     roulette_ver_text.alpha_composite(roulette_ver_text_raw, roulette_ver_text_pos)
     layers['roulette_ver_text'] = roulette_ver_text
 
@@ -482,6 +560,9 @@ def _gen_layers(chara_id):
 
     # bg for item94 icon
     layers['item94_bg'] = _item94_bg(hue1, hue2, text_hue, sat, val)
+
+    # bg for item1 icon
+    layers['item1_bg'] = _item1_bg(hue1, hue2, text_hue, sat, val)
 
     return layers
 
@@ -552,6 +633,34 @@ def _item94_icon(layers):
     img = img.resize((90, 90), Image.Resampling.BICUBIC)
     return img
 
+def _item1_icon(layers):
+    img = layers['item1_bg'].copy()
+    base = layers['base']
+
+    # composite "Lv." text onto base
+    img_lv = layers['lv_text'].copy()
+    lv_alpha = img_lv.getchannel('A')
+    img_lv_hl = ImageChops.hard_light(base, img_lv)
+    lv_hl_alpha = lv_alpha.point(lambda p: int(p * 0.97))
+    img_lv_hl.putalpha(lv_hl_alpha)
+    base.alpha_composite(img_lv_hl)
+    lv_alpha = lv_alpha.point(lambda p: int(p * 0.33))
+    img_lv.putalpha(lv_alpha)
+    base.alpha_composite(img_lv)
+
+    # composite shine layers onto base
+    for layer_name in ('shine1', 'shine2', 'shine3', 'shine4', 'shine5'):
+        layer = layers[layer_name]
+        base.alpha_composite(layer)
+
+    # composite base and text over bg
+    img.alpha_composite(base, (img.width//2 - base.width//2 + 6, img.height//2 - base.height//2 + 10))
+    img.alpha_composite(layers['item94_ver_text'])
+    # resize to 90x90
+    img = img.resize((90, 90), Image.Resampling.BICUBIC)
+    return img
+    }
+
 
 for i, chara_id in enumerate(NEW_ICON_CHARAS.keys()):
     layers = _gen_layers(chara_id)
@@ -565,3 +674,5 @@ for i, chara_id in enumerate(NEW_ICON_CHARAS.keys()):
     item40_icon.save(f'item40_1_{i+25}.png')
     item94_icon = _item94_icon(layers)
     item94_icon.save(f'item94_1_{i+25}.png')
+    item1_icon = _item1_icon(layers)
+    item1_icon.save(f'item1_{i+25}.png')
